@@ -8,4 +8,3 @@ public enum EventType {
     STAT_UPDATE,
     SIMULATION_END
 }
-
