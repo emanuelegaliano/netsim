@@ -1,18 +1,17 @@
-package com.netsim.networkstack.PDUs;
+package com.netsim.networkstack;
 
 import java.nio.charset.StandardCharsets;
 
 public abstract class ApplicationPDU extends PDU {
-    private final String header;
-    private final String content;
+    protected String header;
+    protected final String content;
 
     /**
      * @param header the application-level header (e.g., HTTP GET line)
      * @param content the body or message payload
      */
-    public ApplicationPDU(String content) {
+    protected ApplicationPDU(String content) {
         super(null, null); 
-        this.header = this.getHeader();
         this.content = content;
     }
 
@@ -22,7 +21,7 @@ public abstract class ApplicationPDU extends PDU {
      * In the case of ApplicationPDU: abstract 
      * @return the header 
      */
-    public abstract String getHeader();
+    protected abstract String getHeader();
 
     public String getContent() {
         return this.content;

@@ -1,4 +1,4 @@
-package com.netsim.networkstack.PDUs;
+package com.netsim.networkstack;
 
 import java.io.Serializable;
 
