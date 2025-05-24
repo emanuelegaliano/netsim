@@ -12,3 +12,6 @@
 
 # Application configuration
 application.properties
+
+# gitignore
+.gitignore
