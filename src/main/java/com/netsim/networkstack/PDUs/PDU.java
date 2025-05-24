@@ -1,24 +1,22 @@
-package com.netsim.networkstack;
+package com.netsim.networkstack.PDUs;
+
+import java.io.Serializable;
 
 import com.netsim.addresses.Address;
 
-/**
- * The class used in protocols for encapsulation/decapsulation
- */
-public class PDU {
+public abstract class PDU implements Serializable {
+    protected static final long serialVersionUID = 1L;
+
     protected Address source;
     protected Address destination;
-    protected Payload payload;
 
     /**
      * @param src the source address
      * @param dst the destination address
-     * @param payload of the message
      */
-    protected PDU(Address src, Address dst, Payload payload) {
+    protected PDU(Address src, Address dst) {
         this.source = src;
         this.destination = dst;
-        this.payload = payload;
     }
 
     /**
@@ -35,10 +33,5 @@ public class PDU {
         return this.destination;
     }
 
-    /**
-     * @return the payload to encapsulate/decapsulate
-     */
-    public Payload getPayload() {
-        return this.payload;
-    }
+    public abstract byte[] toByte();
 }
