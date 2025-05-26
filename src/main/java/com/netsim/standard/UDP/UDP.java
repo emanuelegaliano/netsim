@@ -1,25 +1,30 @@
 package com.netsim.standard.UDP;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import com.netsim.addresses.Port;
 
 import com.netsim.networkstack.Protocol;
+import com.netsim.standard.HTTP.HTTPMethods;
 import com.netsim.standard.HTTP.HTTPRequest;
 
 public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
       private final Port sourcePort;
       private final Port destinationPort;
-      private final int segmentSize;
+      private final int MSS; // maximum segment size
 
-      public UDP(int segmentSize, Port source, Port destination) throws IllegalArgumentException {
-            if(segmentSize <= 0)
+      public UDP(int MSS, Port source, Port destination) throws IllegalArgumentException {
+            if(MSS <= 0)
                   throw new IllegalArgumentException("UDP: segment size must be positive");
 
             if(source == null || destination == null)
                   throw new IllegalArgumentException("UDP: source and destination port cannot be null");
 
-            this.segmentSize = segmentSize;
+            this.MSS = MSS;
             this.sourcePort = source;
             this.destinationPort = destination;
       }
@@ -33,14 +38,84 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
       }
 
       public int getSegmentSize() {
-            return this.segmentSize;
+            return this.MSS;
       }
 
+      @Override
       public List<UDPSegment> encapsulate(HTTPRequest pdu) {
-            
+            if (pdu == null) {
+                  throw new IllegalArgumentException("UDP: encapsulation received null HTTPRequest");
+            }
+            byte[] requestBits = pdu.toByte();
+            List<UDPSegment> segments = new ArrayList<>();
+            int sequenceNumber = 0;
+
+            // frammenta in base alla MSS
+            for(int offset = 0; offset < requestBits.length; offset += this.MSS) {
+                  int len = Math.min(this.MSS, requestBits.length - offset);
+                  byte[] chunk = new byte[len];
+                  System.arraycopy(requestBits, offset, chunk, 0, len);
+
+                  UDPSegment seg = new UDPSegment(
+                        this.sourcePort,
+                        this.destinationPort,
+                        sequenceNumber,
+                        chunk
+                  );
+
+                  sequenceNumber++;
+                  segments.add(seg);
+            }
+
+            return segments;
       }
 
-      public HTTPRequest decapsulate(List<UDPSegment> pdu) {
+      @Override
+      public HTTPRequest decapsulate(List<UDPSegment> segments) {
+            if(segments == null || segments.isEmpty()) {
+                  throw new IllegalArgumentException("UDP: decapsulation received null or empty segment list");
+            }
 
+            // 1) Sort segments by sequence number
+            List<UDPSegment> sorted = new ArrayList<>(segments);
+            sorted.sort(Comparator.comparingInt(UDPSegment::getSequenceNumber));
+
+            // 2) Stitch together payload bytes
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            for(UDPSegment seg : sorted) {
+                  byte[] raw = seg.toByte();
+                  byte[] header = seg.getHeader();  // protected access within same package
+                  int hdrLen = header.length;
+                  baos.write(raw, hdrLen, raw.length - hdrLen);
+            }
+
+            byte[] httpBytes = baos.toByteArray();
+            String httpText = new String(httpBytes, StandardCharsets.US_ASCII);
+
+            // 3) Split header and body
+            String[] parts      = httpText.split("\r\n\r\n", 2);
+            String   headerText = parts[0];
+            String   bodyText   = (parts.length > 1 ? parts[1] : "");
+
+            // 4) Parse the request‐line and Host header
+            String[] lines = headerText.split("\r\n");
+            String[] requestLine = lines[0].split(" ", 3);
+            if(requestLine.length < 3 || !"HTTP/1.0".equals(requestLine[2])) {
+                  throw new IllegalArgumentException("UDP: malformed HTTP request‐line: " + lines[0]);
+            }
+            HTTPMethods method = HTTPMethods.valueOf(requestLine[0]);
+            String path = requestLine[1];
+
+            String host = "";
+            for(int i = 1; i < lines.length; i++) {
+                  String line = lines[i];
+                  if(line.startsWith("Host: ")) {
+                        host = line.substring(6);
+                        break;
+                  }
+            }
+
+            // 5) Reconstruct and return the HTTPRequest
+            return new HTTPRequest(method, path, host, bodyText);
       }
 }

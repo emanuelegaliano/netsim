@@ -5,7 +5,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class UDPSegmentTest {
-
       /**
        * Ensure the header is exactly 64 bits (8 bytes) long.
        */
