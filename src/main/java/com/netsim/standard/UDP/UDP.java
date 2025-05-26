@@ -17,6 +17,13 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
       private final Port destinationPort;
       private final int MSS; // maximum segment size
 
+      /**
+       * 
+       * @param MSS the maximum segment size (calculated from the MTU of the device)
+       * @param source the source port of the message
+       * @param destination the destination port of the message
+       * @throws IllegalArgumentException when MSS <= 0 and when source or destination is null
+       */
       public UDP(int MSS, Port source, Port destination) throws IllegalArgumentException {
             if(MSS <= 0)
                   throw new IllegalArgumentException("UDP: segment size must be positive");
@@ -29,20 +36,32 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
             this.destinationPort = destination;
       }
 
+      /**
+       * @return the source port attribute
+       */
       public Port getSourcePort() {
             return this.sourcePort;
       }
 
+      /**
+       * @return the destination port attribute
+       */
       public Port getDestinationPort() {
             return this.destinationPort;
       }
 
-      public int getSegmentSize() {
+      /**
+       * @return the maximum segment size (MSS)
+       */
+      public int getMSS() {
             return this.MSS;
       }
 
+      /**
+       * @throws IllegalArgumentException when pdu is null
+       */
       @Override
-      public List<UDPSegment> encapsulate(HTTPRequest pdu) {
+      public List<UDPSegment> encapsulate(HTTPRequest pdu) throws IllegalArgumentException {
             if (pdu == null) {
                   throw new IllegalArgumentException("UDP: encapsulation received null HTTPRequest");
             }
@@ -70,8 +89,11 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
             return segments;
       }
 
+      /**
+       * @throws IllegalArgumentException when pdu is null or segments list is empty
+       */
       @Override
-      public HTTPRequest decapsulate(List<UDPSegment> segments) {
+      public HTTPRequest decapsulate(List<UDPSegment> segments) throws IllegalArgumentException {
             if(segments == null || segments.isEmpty()) {
                   throw new IllegalArgumentException("UDP: decapsulation received null or empty segment list");
             }

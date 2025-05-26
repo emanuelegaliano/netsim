@@ -34,7 +34,7 @@ public class UDPTest {
             UDP udp = new UDP(512, src, dst);
             assertSame(src, udp.getSourcePort());
             assertSame(dst, udp.getDestinationPort());
-            assertEquals(512, udp.getSegmentSize());
+            assertEquals(512, udp.getMSS());
       }
 
       @Test(expected = IllegalArgumentException.class)
