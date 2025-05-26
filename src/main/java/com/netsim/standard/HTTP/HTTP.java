@@ -2,6 +2,9 @@ package com.netsim.standard.HTTP;
 
 import com.netsim.networkstack.Protocol;
 
+/**
+ * Simplified version HTTP 1/0
+ */
 public class HTTP implements Protocol<String, HTTPRequest> {
     private final HTTPMethods method;
     private final String path;

@@ -3,9 +3,6 @@ package com.netsim.standard.HTTP;
 import com.netsim.networkstack.PDU;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Simplified HTTPRequest 1/0
- */
 public class HTTPRequest extends PDU {
     private final HTTPMethods method;
     private final String path;
@@ -25,17 +22,14 @@ public class HTTPRequest extends PDU {
         this.method = method;
         this.path = path;
         this.host = host;
-        this.header = getHeader();
+        this.header = getStringHeader();
     }
 
     public String getContent() {
         return this.content;
     }
 
-    /**
-     * @return header of the request
-     */
-    protected String getHeader() {
+    private String getStringHeader() {
         StringBuilder sb = new StringBuilder();
         // Request‐line
         sb.append(method.name())
@@ -56,7 +50,15 @@ public class HTTPRequest extends PDU {
         }
         // End of header
         sb.append("\r\n");
+
         return sb.toString();
+    }
+
+    /**
+     * @return header of the request
+     */
+    protected byte[] getHeader() {
+        return this.header.getBytes(StandardCharsets.US_ASCII);
     }
 
     /**
@@ -65,11 +67,11 @@ public class HTTPRequest extends PDU {
      */
     @Override
     public byte[] toByte() {
-        byte[] headerBytes = header.getBytes(StandardCharsets.US_ASCII);
+        byte[] headerBytes = getHeader();
         byte[] bodyBytes = content.getBytes(StandardCharsets.US_ASCII);
-        byte[] all = new byte[headerBytes.length + bodyBytes.length];
-        System.arraycopy(headerBytes, 0, all, 0, headerBytes.length);
-        System.arraycopy(bodyBytes, 0, all, headerBytes.length, bodyBytes.length);
-        return all;
+        byte[] result = new byte[headerBytes.length + bodyBytes.length];
+        System.arraycopy(headerBytes, 0, result, 0, headerBytes.length);
+        System.arraycopy(bodyBytes,   0, result, headerBytes.length, bodyBytes.length);
+        return result;
     }
 }
