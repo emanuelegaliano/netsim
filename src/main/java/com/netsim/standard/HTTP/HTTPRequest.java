@@ -1,16 +1,17 @@
 package com.netsim.standard.HTTP;
 
-import com.netsim.networkstack.ApplicationPDU;
+import com.netsim.networkstack.PDU;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Simplified HTTPRequest 1/0
  */
-public class HTTPRequest extends ApplicationPDU {
+public class HTTPRequest extends PDU {
     private final HTTPMethods method;
     private final String path;
     private final String host;
     private final String header;
+    private final String content;
 
     /**
      * @param method  form HTTPMethods
@@ -19,11 +20,16 @@ public class HTTPRequest extends ApplicationPDU {
      * @param content body of the request
      */
     public HTTPRequest(HTTPMethods method, String path, String host, String content) {
-        super(content);
+        super(null, null);
+        this.content = content;
         this.method = method;
         this.path = path;
         this.host = host;
         this.header = getHeader();
+    }
+
+    public String getContent() {
+        return this.content;
     }
 
     /**

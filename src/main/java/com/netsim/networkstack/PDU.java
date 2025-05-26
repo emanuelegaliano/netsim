@@ -26,6 +26,8 @@ public abstract class PDU implements Serializable {
         return this.source;
     }
 
+    protected abstract String getHeader();
+
     /**
      * @return the destination address
      */

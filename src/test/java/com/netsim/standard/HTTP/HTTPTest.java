@@ -42,6 +42,7 @@ public class HTTPTest {
     public void constructorNullHostThrows() {
         new HTTP(HTTPMethods.GET, "/path", null);
     }
+    
 
     /**
      * encapsulate should throw if content is null.
