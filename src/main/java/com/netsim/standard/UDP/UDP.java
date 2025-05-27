@@ -94,9 +94,8 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
        */
       @Override
       public HTTPRequest decapsulate(List<UDPSegment> segments) throws IllegalArgumentException {
-            if(segments == null || segments.isEmpty()) {
+            if(segments == null || segments.isEmpty())
                   throw new IllegalArgumentException("UDP: decapsulation received null or empty segment list");
-            }
 
             // 1) Sort segments by sequence number
             List<UDPSegment> sorted = new ArrayList<>(segments);
@@ -115,9 +114,9 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
             String httpText = new String(httpBytes, StandardCharsets.US_ASCII);
 
             // 3) Split header and body
-            String[] parts      = httpText.split("\r\n\r\n", 2);
+            String[] parts = httpText.split("\r\n\r\n", 2);
             String headerText = parts[0];
-            String bodyText   = (parts.length > 1 ? parts[1] : "");
+            String bodyText = (parts.length > 1 ? parts[1] : "");
 
             // 4) Parse the request‐line and Host header
             String[] lines = headerText.split("\r\n");
