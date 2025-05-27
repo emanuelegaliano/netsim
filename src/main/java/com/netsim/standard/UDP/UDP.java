@@ -116,8 +116,8 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
 
             // 3) Split header and body
             String[] parts      = httpText.split("\r\n\r\n", 2);
-            String   headerText = parts[0];
-            String   bodyText   = (parts.length > 1 ? parts[1] : "");
+            String headerText = parts[0];
+            String bodyText   = (parts.length > 1 ? parts[1] : "");
 
             // 4) Parse the request‐line and Host header
             String[] lines = headerText.split("\r\n");
@@ -129,11 +129,12 @@ public class UDP implements Protocol<HTTPRequest, List<UDPSegment>> {
             String path = requestLine[1];
 
             String host = "";
-            for(int i = 1; i < lines.length; i++) {
+            boolean parsing = true;
+            for(int i = 1; i < lines.length && parsing; i++) {
                   String line = lines[i];
                   if(line.startsWith("Host: ")) {
                         host = line.substring(6);
-                        break;
+                        parsing = false;
                   }
             }
 
