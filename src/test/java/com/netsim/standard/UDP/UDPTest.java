@@ -2,128 +2,177 @@ package com.netsim.standard.UDP;
 
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.netsim.addresses.Port;
-import com.netsim.standard.HTTP.HTTPMethods;
-import com.netsim.standard.HTTP.HTTPRequest;
+import com.netsim.networkstack.Protocol;
 
 public class UDPTest {
-      @Test(expected = IllegalArgumentException.class)
-      public void testConstructorInvalidMSS() {
-            new UDP(0, new Port("12345"), new Port("80"));
-      }
+    private static final Port SRC = new Port("1000");
+    private static final Port DST = new Port("2000");
+    private byte[] payload;
+    private UDP udp;
 
-      @Test(expected = IllegalArgumentException.class)
-      public void testConstructorNullSource() {
-            new UDP(100, null, new Port("80"));
-      }
+    @Before
+    public void setUp() {
+        payload = "HELLOWORLD".getBytes(StandardCharsets.US_ASCII);
+        udp = new UDP(1024, SRC, DST);  // MSS large enough for single segment
+    }
 
-      @Test(expected = IllegalArgumentException.class)
-      public void testConstructorNullDestination() {
-            new UDP(100, new Port("12345"), null);
-      }
+    @Test(expected = IllegalArgumentException.class)
+    public void constructorRejectsZeroMSS() {
+        new UDP(0, SRC, DST);
+    }
 
-      @Test
-      public void testGetters() {
-            Port src = new Port("12345");
-            Port dst = new Port("80");
-            UDP udp = new UDP(512, src, dst);
-            assertSame(src, udp.getSourcePort());
-            assertSame(dst, udp.getDestinationPort());
-            assertEquals(512, udp.getMSS());
-      }
+    @Test(expected = IllegalArgumentException.class)
+    public void constructorRejectsNegativeMSS() {
+        new UDP(-1, SRC, DST);
+    }
 
-      @Test(expected = IllegalArgumentException.class)
-      public void testEncapsulateNullRequest() {
-            UDP udp = new UDP(256, new Port("1000"), new Port("2000"));
-            udp.encapsulate(null);
-      }
+    @Test(expected = IllegalArgumentException.class)
+    public void constructorRejectsNullSource() {
+        new UDP(100, null, DST);
+    }
 
-      @Test
-      public void testEncapsulateSingleSegment() {
-            HTTPRequest req = new HTTPRequest(
-                  HTTPMethods.GET, "/path", "host", ""
-            );  // empty body
+    @Test(expected = IllegalArgumentException.class)
+    public void constructorRejectsNullDestination() {
+        new UDP(100, SRC, null);
+    }
 
-            UDP udp = new UDP(1024, new Port("1000"), new Port("2000"));
-            List<UDPSegment> segments = udp.encapsulate(req);
+    @Test
+    public void gettersReturnCorrectValues() {
+        assertSame("sourcePort", SRC, udp.getSourcePort());
+        assertSame("destinationPort", DST, udp.getDestinationPort());
+        assertEquals("MSS", 1024, udp.getMSS());
+    }
 
-            // Only one segment should be produced
-            assertEquals(1, segments.size());
+    @Test(expected = IllegalArgumentException.class)
+    public void encapsulateThrowsOnNull() {
+        udp.encapsulate(null);
+    }
 
-            UDPSegment seg = segments.get(0);
-            // Sequence number of first segment is 0
-            assertEquals(0, seg.getSequenceNumber());
+    @Test(expected = IllegalArgumentException.class)
+    public void encapsulateThrowsOnEmpty() {
+        udp.encapsulate(new byte[0]);
+    }
 
-            // Payload length equals entire HTTP bytes
-            int payloadBytes = seg.toByte().length - seg.getHeader().length;
-            assertEquals(req.toByte().length, payloadBytes);
-      }
+    @Test(expected = RuntimeException.class)
+    public void encapsulateThrowsWhenNextNotDefined() {
+        udp.encapsulate(payload);
+    }
 
-      @Test
-      public void testEncapsulateMultipleSegments() {
-            // Make a request whose byte length exceeds MSS
-            String body = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";  // 26 bytes
-            HTTPRequest req = new HTTPRequest(
-                  HTTPMethods.GET, "/resource", "host", body
-            );
+    @Test(expected = NullPointerException.class)
+    public void setNextRejectsNull() {
+        udp.setNext(null);
+    }
 
-            byte[] allBytes = req.toByte();
-            int mss = 10;
-            UDP udp = new UDP(mss, new Port("1000"), new Port("2000"));
+    @Test
+    public void encapsulateSingleSegment() {
+        // stub next protocol echoes input
+        Protocol stubNext = new Protocol() {
+            @Override public byte[] encapsulate(byte[] pdu) { return pdu; }
+            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
+            @Override public void setNext(Protocol next) {}
+            @Override public void setPrevious(Protocol prev) {}
+        };
+        udp.setNext(stubNext);
 
-            List<UDPSegment> segments = udp.encapsulate(req);
-            assertTrue("Should fragment into multiple segments", segments.size() > 1);
+        byte[] datagram = udp.encapsulate(payload);
+        // Only one UDPSegment created
+        UDPSegment seg = new UDPSegment(SRC, DST, 0, payload);
+        assertArrayEquals("single-segment datagram", seg.toByte(), datagram);
+    }
 
-            // Verify sequence numbers and payload sizes
-            int totalPayload = 0;
-            for (int i = 0; i < segments.size(); i++) {
-                  UDPSegment seg = segments.get(i);
-                  assertEquals("Sequence number", i, seg.getSequenceNumber());
+    @Test
+    public void encapsulateMultipleSegments() {
+        // set MSS small to force fragmentation
+        udp = new UDP(4, SRC, DST);
 
-                  int headerLen  = seg.getHeader().length;
-                  int segLen     = seg.toByte().length - headerLen;
-                  assertTrue("Payload ≤ MSS", segLen <= mss);
-                  totalPayload += segLen;
-            }
-            // Total payload across segments equals original length
-            assertEquals(allBytes.length, totalPayload);
-      }
+        Protocol stubNext = new Protocol() {
+            @Override public byte[] encapsulate(byte[] pdu) { return pdu; }
+            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
+            @Override public void setNext(Protocol next) {}
+            @Override public void setPrevious(Protocol prev) {}
+        };
+        udp.setNext(stubNext);
 
-      @Test(expected = IllegalArgumentException.class)
-      public void testDecapsulateNullList() {
-            UDP udp = new UDP(256, new Port("1000"), new Port("2000"));
-            udp.decapsulate(null);
-      }
+        byte[] datagram = udp.encapsulate(payload);
+        // compute expected fragments
+        int expectedChunks = (int)Math.ceil((double)payload.length / 4);
+        int index = 0;
+        for (int seq = 0; seq < expectedChunks; seq++) {
+            int chunkLen = Math.min(4, payload.length - seq * 4);
+            byte[] chunk = Arrays.copyOfRange(payload, seq * 4, seq * 4 + chunkLen);
+            UDPSegment expected = new UDPSegment(SRC, DST, seq, chunk);
+            byte[] expectedBytes = expected.toByte();
+            byte[] actualBytes = Arrays.copyOfRange(datagram, index, index + expectedBytes.length);
+            assertArrayEquals("fragment " + seq, expectedBytes, actualBytes);
+            index += expectedBytes.length;
+        }
+        // no leftover
+        assertEquals("total datagram length", index, datagram.length);
+    }
 
-      @Test(expected = IllegalArgumentException.class)
-      public void testDecapsulateEmptyList() {
-            UDP udp = new UDP(256, new Port("1000"), new Port("2000"));
-            udp.decapsulate(new ArrayList<>());
-      }
+    @Test(expected = IllegalArgumentException.class)
+    public void decapsulateThrowsOnNull() {
+        udp.decapsulate(null);
+    }
 
-      @Test
-      public void testDecapsulateReassemblesExactly() {
-            String body = "Hello, UDP fragmentation!";
-            HTTPRequest original = new HTTPRequest(
-                  HTTPMethods.POST, "/submit", "example.com", body
-            );
+    @Test(expected = IllegalArgumentException.class)
+    public void decapsulateThrowsOnEmpty() {
+        udp.decapsulate(new byte[0]);
+    }
 
-            UDP udp = new UDP(8, new Port("1000"), new Port("2000"));
+    @Test(expected = RuntimeException.class)
+    public void decapsulateThrowsWhenPreviousNotDefined() {
+        // build a minimal length-prefixed buffer
+        ByteBuffer buf = ByteBuffer.allocate(4);
+        buf.putInt(0);
+        udp.decapsulate(buf.array());
+    }
 
-            // fragment and then reassemble
-            List<UDPSegment> frags = udp.encapsulate(original);
-            HTTPRequest reassembled = udp.decapsulate(frags);
+    @Test(expected = NullPointerException.class)
+    public void setPreviousRejectsNull() {
+        udp.setPrevious(null);
+    }
 
-            // The reassembled request must match exactly byte-for-byte
-            assertArrayEquals(
-                  "Full HTTP bytes should round-trip",
-                  original.toByte(),
-                  reassembled.toByte()
-            );
-      }
+    @Test
+    public void decapsulateReassemblesPayload() throws Exception {
+        // prepare two segments (out of order)
+        byte[] part1 = "ABCDEFG".getBytes(StandardCharsets.US_ASCII);
+        byte[] part2 = "12345".getBytes(StandardCharsets.US_ASCII);
+
+        UDPSegment s1 = new UDPSegment(SRC, DST, 1, part1);
+        UDPSegment s0 = new UDPSegment(SRC, DST, 0, part2);
+
+        byte[] b1 = s1.toByte(), b0 = s0.toByte();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // write them back‐to‐back, no length prefixes
+        out.write(b1);
+        out.write(b0);
+
+        // stub previous protocol that just echoes the payload
+        Protocol stubPrev = new Protocol() {
+            @Override public byte[] encapsulate(byte[] pdu) { return pdu; }
+            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
+            @Override public void setNext(Protocol next)    {}
+            @Override public void setPrevious(Protocol prev){}
+        };
+        udp.setPrevious(stubPrev);
+
+        byte[] reassembled = udp.decapsulate(out.toByteArray());
+
+        // Should come back in order s0 then s1:
+        byte[] expected = new byte[part2.length + part1.length];
+        System.arraycopy(part2, 0, expected, 0, part2.length);
+        System.arraycopy(part1, 0, expected, part2.length, part1.length);
+
+        assertArrayEquals("payload reassembled in order", expected, reassembled);
+    }
 }

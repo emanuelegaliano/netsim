@@ -91,7 +91,7 @@ public class UDPSegment extends PDU {
      * - length: 16 bits
      * @return a byte array containing the header fields in network byte order
      */
-      protected byte[] getHeader() {
+      public byte[] getHeader() {
             byte[] srcBytes = this.source.byteRepresentation();
             byte[] dstBytes = this.destination.byteRepresentation();
 
@@ -124,4 +124,58 @@ public class UDPSegment extends PDU {
             
             return buf.array();
       }
+
+      /** 
+       * @param data header+payload in byte array
+       * @return UDP segment
+       * @throws IllegalArgumentException if data is null or data length is < 8
+       */
+      public static UDPSegment fromBytes(byte[] data) {
+            if (data == null || data.length < 8) {
+                  throw new IllegalArgumentException(
+                  "UDPSegment: input null o troppo corto per contenere un header UDP");
+            }
+
+            ByteBuffer buf = ByteBuffer.wrap(data);
+
+            // 1) leggi e costruisci source port
+            byte[] srcBytes = new byte[Short.BYTES];
+            buf.get(srcBytes);
+            Port source = Port.fromBytes(srcBytes);  // o new Port(...), a seconda della tua API
+
+            // 2) leggi e costruisci destination port
+            byte[] dstBytes = new byte[Short.BYTES];
+            buf.get(dstBytes);
+            Port destination = Port.fromBytes(dstBytes);
+
+            // 3) sequence number (16 bit, trattato come unsigned)
+            short rawSeq = buf.getShort();
+            int sequenceNumber = Short.toUnsignedInt(rawSeq);
+
+            // 4) length in bit (header + payload)
+            short lengthBits = buf.getShort();
+
+            // 5) estrai payload dal resto del buffer
+            int headerBytes = 2 + 2 + 2 + 2;  // porte + seq + length
+            int payloadBytes = data.length - headerBytes;
+            if (payloadBytes < 0) {
+                  throw new IllegalArgumentException(
+                  "UDPSegment: lunghezza buffer incoerente: header=" 
+                  + headerBytes + " B, totale=" + data.length + " B");
+            }
+            byte[] payload = new byte[payloadBytes];
+            buf.get(payload);
+
+            // 6) (opzionale) verifica che lengthBits corrisponda
+            int totalBits = (headerBytes + payloadBytes) * Byte.SIZE;
+            if (lengthBits != (short) totalBits) {
+                  throw new IllegalArgumentException(
+                  "UDPSegment: campo length non corrisponde ai bit effettivi: "
+                  + lengthBits + " vs " + totalBits);
+            }
+
+            // 7) crea e ritorna l'oggetto
+            return new UDPSegment(source, destination, sequenceNumber, payload);
+      }
+
 }

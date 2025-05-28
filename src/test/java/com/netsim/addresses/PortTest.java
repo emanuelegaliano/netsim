@@ -64,4 +64,15 @@ public class PortTest {
             p.parse("99999");
         });
     }
+
+    @Test
+    public void testFromBytesValid() {
+        // 0x1F90 = 8080 in big-endian
+        byte[] data = new byte[] { (byte) 0x1F, (byte) 0x90 };
+        Port p = Port.fromBytes(data);
+        assertEquals(8080, p.getPort());
+        // Verifica che l'array interno corrisponda
+        assertArrayEquals(data, p.byteRepresentation());
+    }
+
 }

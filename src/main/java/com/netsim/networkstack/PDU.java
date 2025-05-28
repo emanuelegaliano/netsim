@@ -14,7 +14,7 @@ public abstract class PDU implements Serializable {
      * @param src the source address
      * @param dst the destination address
      */
-    protected PDU(Address src, Address dst) throws IllegalArgumentException {
+    protected PDU(Address src, Address dst) {
         this.source = src;
         this.destination = dst;
     }
@@ -26,8 +26,6 @@ public abstract class PDU implements Serializable {
         return this.source;
     }
 
-    protected abstract byte[] getHeader();
-
     /**
      * @return the destination address
      */
@@ -35,5 +33,6 @@ public abstract class PDU implements Serializable {
         return this.destination;
     }
 
+    public abstract byte[] getHeader();
     public abstract byte[] toByte();
 }

@@ -6,118 +6,92 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
-/**
- * Unit tests for HTTPRequest
- */
 public class HTTPRequestTest {
+      @Test(expected = IllegalArgumentException.class)
+      public void constructorThrowsOnNullPath() {
+            new HTTPRequest(HTTPMethods.GET, null, "host", "data".getBytes());
+      }
 
-    /**
-     * Test that a GET request generates the correct headers only,
-     * without a Content-Length header and no body.
-     */
-    @Test
-    public void testGetRequestHeaderOnly() {
-        HTTPRequest req = new HTTPRequest(
-            HTTPMethods.GET,
-            "/index.html",
-            "www.example.com",
-            ""  // GET requests have no body
-        );
+      @Test(expected = IllegalArgumentException.class)
+      public void constructorThrowsOnNullHost() {
+            new HTTPRequest(HTTPMethods.GET, "/path", null, "data".getBytes());
+      }
 
-        String raw = new String(req.toByte(), StandardCharsets.US_ASCII);
+      @Test(expected = IllegalArgumentException.class)
+      public void constructorThrowsOnNullContent() {
+            new HTTPRequest(HTTPMethods.GET, "/path", "host", null);
+      }
 
-        // Should start with the correct request-line
-        assertTrue("Request-line should start with GET method",
-                   raw.startsWith("GET /index.html HTTP/1.0\r\n"));
+      @Test
+      public void getContentReturnsSameArray() {
+            byte[] content = "hello".getBytes(StandardCharsets.US_ASCII);
+            HTTPRequest req = new HTTPRequest(HTTPMethods.GET, "/foo", "example.com", content);
+            assertSame("getContent should return the same byte[] reference",
+                        content, req.getContent());
+      }
 
-        // Should contain the Host header
-        assertTrue("Header should contain Host field",
-                   raw.contains("Host: www.example.com\r\n"));
+      @Test
+      public void getHeaderForGetRequest() {
+            HTTPRequest req = new HTTPRequest(
+                  HTTPMethods.GET,
+                  "/index.html",
+                  "www.example.com",
+                  new byte[0]
+            );
+            String header = new String(req.getHeader(), StandardCharsets.US_ASCII);
 
-        // Should not contain Content-Length for GET
-        assertFalse("GET requests must not include Content-Length",
-                    raw.contains("Content-Length:"));
+            String expected = ""
+                  + "GET /index.html HTTP/1.0\r\n"
+                  + "Host: www.example.com\r\n"
+                  + "\r\n";
 
-        // Should end with CRLF CRLF and no body
-        assertTrue("Header should end with CRLFCRLF",
-                   raw.endsWith("\r\n\r\n"));
+            assertEquals("GET request header must match exactly", expected, header);
+      }
 
-        // Verify total length matches expected header length
-        String expectedHeader = "GET /index.html HTTP/1.0\r\n" +
-                                "Host: www.example.com\r\n" +
-                                "\r\n";
-        assertEquals("Raw header length should match expected header length",
-                     expectedHeader.length(),
-                     raw.length());
-    }
+      @Test
+      public void getHeaderForPostRequestIncludesContentLength() {
+            byte[] content = "abc123".getBytes(StandardCharsets.US_ASCII);
+            HTTPRequest req = new HTTPRequest(
+                  HTTPMethods.POST,
+                  "/submit",
+                  "api.test",
+                  content
+            );
+            String header = new String(req.getHeader(), StandardCharsets.US_ASCII);
 
-    /**
-     * Test that a POST request includes Content-Length and body correctly.
-     */
-    @Test
-    public void testPostRequestWithBody() {
-        String body = "field1=value1&f2=v2";
-        HTTPRequest req = new HTTPRequest(
-            HTTPMethods.POST,
-            "/submit",
-            "api.example.com",
-            body
-        );
+            String expectedStart = ""
+                  + "POST /submit HTTP/1.0\r\n"
+                  + "Host: api.test\r\n"
+                  + "Content-Length: 6\r\n"
+                  + "\r\n";
 
-        String raw = new String(req.toByte(), StandardCharsets.US_ASCII);
+            assertEquals("POST header must include correct Content-Length",
+                        expectedStart, header);
+      }
 
-        // Should start with POST request-line
-        assertTrue("Request-line should start with POST method",
-                   raw.startsWith("POST /submit HTTP/1.0\r\n"));
+      @Test
+      public void toByteConcatenatesHeaderAndBody() {
+            byte[] content = "payload".getBytes(StandardCharsets.US_ASCII);
+            HTTPRequest req = new HTTPRequest(
+                  HTTPMethods.POST,
+                  "/data",
+                  "svc.local",
+                  content
+            );
+            byte[] raw = req.toByte();
 
-        // Should contain the Host header
-        assertTrue("Header should contain Host field",
-                   raw.contains("Host: api.example.com\r\n"));
+            byte[] headerBytes = req.getHeader();
+            assertEquals("raw[] should start with header[]",
+                        new String(headerBytes, StandardCharsets.US_ASCII),
+                        new String(raw, 0, headerBytes.length, StandardCharsets.US_ASCII));
 
-        // Content-Length must match body length
-        int expectedLen = body.getBytes(StandardCharsets.US_ASCII).length;
-        assertTrue("Header should contain correct Content-Length",
-                   raw.contains("Content-Length: " + expectedLen + "\r\n"));
+            byte[] bodyBytes = new byte[content.length];
+            System.arraycopy(raw, headerBytes.length, bodyBytes, 0, content.length);
+            assertArrayEquals("raw[] should end with the content payload",
+                              content, bodyBytes);
 
-        // Ensure CRLFCRLF separates header and body
-        int splitIndex = raw.indexOf("\r\n\r\n");
-        assertTrue("Header and body must be separated by CRLFCRLF",
-                   splitIndex > 0);
-
-        String headerPart = raw.substring(0, splitIndex + 4);
-        String bodyPart   = raw.substring(splitIndex + 4);
-
-        // Body must be accurately appended
-        assertEquals("Body content should match the input content",
-                     body, bodyPart);
-
-        // Combining header and body should reconstruct raw
-        assertEquals("Reconstructed message should match raw",
-                     headerPart + bodyPart,
-                     raw);
-    }
-
-    /**
-     * Test custom path and host fields in the request.
-     */
-    @Test
-    public void testCustomPathAndHost() {
-        String path = "/api/data";
-        String host = "localhost:8080";
-        HTTPRequest req = new HTTPRequest(
-            HTTPMethods.GET,
-            path,
-            host,
-            ""  // GET requests have no body
-        );
-        String raw = new String(req.toByte(), StandardCharsets.US_ASCII);
-
-        // Verify request-line uses the custom path
-        assertTrue("Request-line should include the custom path",
-                   raw.startsWith("GET " + path + " HTTP/1.0\r\n"));
-
-        // Verify Host header uses the custom host
-        assertTrue("Header should include the custom host",
-                   raw.contains("Host: " + host + "\r\n"));
-    }
+            assertEquals("total length must equal header + content length",
+                        headerBytes.length + content.length,
+                        raw.length);
+      }
 }

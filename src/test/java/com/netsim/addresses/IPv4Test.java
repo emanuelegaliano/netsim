@@ -1,6 +1,7 @@
 package com.netsim.addresses;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -9,7 +10,7 @@ public class IPv4Test {
     @Test
     public void testSubnetWithString() {
         int mask = 24;
-        IPv4 ip = new IPv4("192.168.1.100", mask);
+        IPv4 ip = new IPv4("192.168.1.100", 24);
 
         assertTrue(
             "192.168.1.100 should be in 192.168.1.0/24",
@@ -109,5 +110,14 @@ public class IPv4Test {
 
         IPv4 ipNonUnspec = new IPv4("0.0.0.1", 32);
         assertFalse("0.0.0.1 should NOT be unspecified", ipNonUnspec.isUnspecified());
+    }
+        
+    @Test
+    public void testAddressByteLength() {
+        IPv4 ip = new IPv4("192.168.1.100", 24);
+        byte[] bytes = ip.byteRepresentation();
+        // should be represented by 4 bytes (32 bits)
+        assertEquals("Address byte array should have length 4", 4, bytes.length);
+        assertEquals("Address should be represented in 32 bits", 32, bytes.length * 8);
     }
 }

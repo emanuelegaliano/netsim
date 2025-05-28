@@ -94,4 +94,26 @@ public class Port extends Address {
             (byte) (port & 0xFF)
         };
     }
+    
+    /**
+    * @param data array di 2 byte che codifica il numero di porta
+    * @return una nuova istanza di Port con quel numero
+    * @throws IllegalArgumentException se data è null o non di lunghezza 2,
+    *         o se il valore risultante è fuori dal range 0–65535
+    */
+    public static Port fromBytes(byte[] data) {
+        if(data == null) 
+            throw new IllegalArgumentException("Port.fromBytes: input null");
+        if(data.length != 2) {
+            throw new IllegalArgumentException(
+                "Port.fromBytes: 2 bytes expected but received " 
+                + data.length);
+        }
+
+        // interpreta in big-endian
+        int portValue = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF);
+
+        // il costruttore Port(String) sfrutta parse() interno per validare e settare
+        return new Port(Integer.toString(portValue));
+    }
 }

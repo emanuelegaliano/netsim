@@ -8,42 +8,46 @@ public class HTTPRequest extends PDU {
     private final String path;
     private final String host;
     private final String header;
-    private final String content;
+    private final byte[] content;
 
     /**
      * @param method  form HTTPMethods
      * @param path e.g. "/index.html"
      * @param host e.g. "www.example.com"
      * @param content body of the request
+     * @throws IllegalArgumentException if any of the arguments is null or content.length is 0
      */
-    public HTTPRequest(HTTPMethods method, String path, String host, String content) {
+    public HTTPRequest(HTTPMethods method, String path, String host, byte[] content) {
         super(null, null);
+        if(path == null || host == null || content == null)
+            throw new IllegalArgumentException("HTTPRequest: one of the arguments is null");
+
         this.content = content;
         this.method = method;
         this.path = path;
         this.host = host;
-        this.header = getStringHeader();
+        this.header = this.getStringHeader();
     }
 
-    public String getContent() {
+    public byte[] getContent() {
         return this.content;
     }
 
     private String getStringHeader() {
         StringBuilder sb = new StringBuilder();
         // Request‐line
-        sb.append(method.name())
+        sb.append(this.method.name())
           .append(' ')
-          .append(path)
+          .append(this.path)
           .append(" HTTP/1.0")
           .append("\r\n");
         // Host
         sb.append("Host: ")
-          .append(host)
+          .append(this.host)
           .append("\r\n");
         // if method is post lenght is needed
-        if(method == HTTPMethods.POST) {
-            int len = content.getBytes(StandardCharsets.US_ASCII).length;
+        if(this.method == HTTPMethods.POST) {
+            int len = this.content.length;
             sb.append("Content-Length: ")
               .append(len)
               .append("\r\n");
@@ -57,7 +61,7 @@ public class HTTPRequest extends PDU {
     /**
      * @return header of the request
      */
-    protected byte[] getHeader() {
+    public byte[] getHeader() {
         return this.header.getBytes(StandardCharsets.US_ASCII);
     }
 
@@ -67,11 +71,11 @@ public class HTTPRequest extends PDU {
      */
     @Override
     public byte[] toByte() {
-        byte[] headerBytes = getHeader();
-        byte[] bodyBytes = content.getBytes(StandardCharsets.US_ASCII);
+        byte[] headerBytes = this.getHeader();
+        byte[] bodyBytes = this.content;
         byte[] result = new byte[headerBytes.length + bodyBytes.length];
         System.arraycopy(headerBytes, 0, result, 0, headerBytes.length);
-        System.arraycopy(bodyBytes,   0, result, headerBytes.length, bodyBytes.length);
+        System.arraycopy(bodyBytes, 0, result, headerBytes.length, bodyBytes.length);
         return result;
     }
 }
