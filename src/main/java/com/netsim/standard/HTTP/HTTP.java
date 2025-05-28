@@ -73,7 +73,7 @@ public class HTTP implements Protocol {
      * not defined (aka previousProtocolDefined = false)
      */
     @Override
-    public byte[] decapsulate(byte[] lowerLayerPDU) {
+    public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, RuntimeException {
         if(lowerLayerPDU == null)
             throw new IllegalArgumentException("HTTPRequest decapsulation is null");
         if(previousProtocolDefined == false)
@@ -86,7 +86,7 @@ public class HTTP implements Protocol {
         if (sep < 0)
             throw new IllegalArgumentException(
                 "HTTP: malformed request (missing header/body separator)");
-
+        
         // estrai il body vero e proprio
         byte[] body = Arrays.copyOfRange(lowerLayerPDU, sep + 4, lowerLayerPDU.length);
 
@@ -110,11 +110,11 @@ public class HTTP implements Protocol {
      * @param prevProtocol the previous protocol of the chain
      * @throws NullPointerException if prevProtocol is null
      */
-    public void setPrevious(Protocol prevProtocol) throws NullPointerException {
-        if(prevProtocol == null)
+    public void setPrevious(Protocol previousProtocol) throws NullPointerException {
+        if(previousProtocol == null)
             throw new NullPointerException("HTTP: previous protocol cannot be null");
         
-        this.previousProtocol = prevProtocol;
+        this.previousProtocol = previousProtocol;
         this.previousProtocolDefined = true;
     }
 }

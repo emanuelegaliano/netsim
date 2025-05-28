@@ -23,7 +23,6 @@ public class UDP implements Protocol {
         private boolean previousProtocolDefined;
 
         /**
-         * 
          * @param MSS the maximum segment size (calculated from the MTU of the device)
          * @param source the source port of the message
          * @param destination the destination port of the message
@@ -68,6 +67,13 @@ public class UDP implements Protocol {
                 return this.MSS;
         }
 
+        /**
+         * Encapsulating message in a raw byte array adding 
+         * UDP header
+         * @throws IllegalArgumentException if upperLayerPDU is null or its length is 0
+         * @throws RuntimeException if the next protocol of UDP is not defined or
+         * if something goes wrong when encapsulating 
+         */
         public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, RuntimeException {
             if(upperLayerPDU == null || upperLayerPDU.length == 0)
                 throw new IllegalArgumentException("UDP: payload on encapsulation cannot be null");
@@ -155,8 +161,8 @@ public class UDP implements Protocol {
 
                 // 5) Reconstruct the full segment byte array
                 byte[] segBytes = new byte[totalBytes];
-                System.arraycopy(header,  0, segBytes, 0,               HEADER_LEN);
-                System.arraycopy(payload, 0, segBytes, HEADER_LEN,     payloadBytes);
+                System.arraycopy(header, 0, segBytes, 0, HEADER_LEN);
+                System.arraycopy(payload, 0, segBytes, HEADER_LEN, payloadBytes);
 
                 // 6) Parse and add to list
                 list.add(UDPSegment.fromBytes(segBytes));
@@ -165,7 +171,13 @@ public class UDP implements Protocol {
             return list;
         }
 
-        public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException {
+        /**
+         * Decapsulating message in a raw byte array 
+         * removing UDP header
+         * @throws IllegalArgumentException if lowerLayerPDU is null or its length is 0
+         * @throws RuntimeException if previous protocol of UDP is not defined
+         */
+        public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, RuntimeException {
             if(lowerLayerPDU == null || lowerLayerPDU.length == 0)
                 throw new IllegalArgumentException("UDP: decapsulation received null or empty segments data");
 
