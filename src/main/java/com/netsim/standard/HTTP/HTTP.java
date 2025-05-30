@@ -13,10 +13,7 @@ public class HTTP implements Protocol {
     private final String path;
     private final String host;
     
-    private boolean nextProtocolDefined;
     private Protocol nextProtocol;
-
-    private boolean previousProtocolDefined;
     private Protocol previousProtocol;
 
     /**
@@ -33,10 +30,7 @@ public class HTTP implements Protocol {
         this.host = host;
 
         this.nextProtocol = null;
-        this.nextProtocolDefined = false;
-
         this.previousProtocol = null;
-        this.previousProtocolDefined = false;
     }
 
     /**
@@ -52,12 +46,10 @@ public class HTTP implements Protocol {
     public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, RuntimeException {
         if(upperLayerPDU.length == 0 || upperLayerPDU == null) 
             throw new IllegalArgumentException("HTTPRequest: pdu is null or its length is 0");
-
-        if(this.nextProtocolDefined == false)
-            throw new RuntimeException("HTTP: next protocol is not defined");
             
         if(this.nextProtocol == null)
-            return upperLayerPDU;
+            throw new RuntimeException("HTTP: next protocol is not defined");
+
 
         HTTPRequest request = new HTTPRequest(this.method, this.path, this.host, upperLayerPDU);
         return this.nextProtocol.encapsulate(request.toByte());
@@ -76,10 +68,8 @@ public class HTTP implements Protocol {
     public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, RuntimeException {
         if(lowerLayerPDU == null)
             throw new IllegalArgumentException("HTTPRequest decapsulation is null");
-        if(previousProtocolDefined == false)
+        if(this.previousProtocol == null)
             throw new RuntimeException("HTTP: previous protocol is not defined");
-        if(previousProtocol == null)
-            return lowerLayerPDU;
 
         String raw = new String(lowerLayerPDU, StandardCharsets.US_ASCII);
         int sep = raw.indexOf("\r\n\r\n");
@@ -103,7 +93,6 @@ public class HTTP implements Protocol {
             throw new NullPointerException("HTTP: next protocol cannot be null");
         
         this.nextProtocol = nextProtocol;
-        this.nextProtocolDefined = true;
     }
 
     /**
@@ -115,6 +104,5 @@ public class HTTP implements Protocol {
             throw new NullPointerException("HTTP: previous protocol cannot be null");
         
         this.previousProtocol = previousProtocol;
-        this.previousProtocolDefined = true;
     }
 }

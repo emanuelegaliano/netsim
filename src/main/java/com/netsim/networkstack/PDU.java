@@ -33,6 +33,16 @@ public abstract class PDU implements Serializable {
         return this.destination;
     }
 
+    /**
+     * This abstract method defines the header of the protocol payload
+     * @return the hader in raw byte array
+     */
     public abstract byte[] getHeader();
+
+    /**
+     * This abstract method compute the whole protocol
+     * payload
+     * @return the whole payload in a raw byte array
+     */
     public abstract byte[] toByte();
 }

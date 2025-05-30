@@ -17,10 +17,7 @@ public class UDP implements Protocol {
         private final int MSS; // maximum segment size
 
         private Protocol nextProtocol;
-        private boolean nextProtocolDefined;
-
         private Protocol previousProtocol;
-        private boolean previousProtocolDefined;
 
         /**
          * @param MSS the maximum segment size (calculated from the MTU of the device)
@@ -40,10 +37,7 @@ public class UDP implements Protocol {
             this.destinationPort = destination;
 
             this.nextProtocol = null;
-            this.nextProtocolDefined = false;
-
             this.previousProtocol = null;
-            this.nextProtocolDefined = false;
         }
 
         /**
@@ -78,11 +72,9 @@ public class UDP implements Protocol {
             if(upperLayerPDU == null || upperLayerPDU.length == 0)
                 throw new IllegalArgumentException("UDP: payload on encapsulation cannot be null");
 
-            if(this.nextProtocolDefined == false)
+            if(this.nextProtocol == null)
                 throw new RuntimeException("UDP: next protocol is not defined");
 
-            if(this.nextProtocol == null)
-                return upperLayerPDU;
 
             int sequenceNumber = 0; 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -181,11 +173,9 @@ public class UDP implements Protocol {
             if(lowerLayerPDU == null || lowerLayerPDU.length == 0)
                 throw new IllegalArgumentException("UDP: decapsulation received null or empty segments data");
 
-            if(this.previousProtocolDefined == false)
+            if(this.previousProtocol == null)
                 throw new RuntimeException("UDP: previous protocol not defined");
 
-            if(this.previousProtocol == null)
-                return lowerLayerPDU;
 
             // 1) Parsiamo i segmenti "grezzi" in oggetti UDPSegment
             List<UDPSegment> segments = this.parseSegments(lowerLayerPDU);
@@ -211,7 +201,6 @@ public class UDP implements Protocol {
                     throw new NullPointerException("UDP: next protocol cannot be null");
 
                 this.nextProtocol = nextProtocol;
-                this.nextProtocolDefined = true;
         }
 
         public void setPrevious(Protocol previousProtocol) throws NullPointerException {
@@ -219,6 +208,5 @@ public class UDP implements Protocol {
                     throw new NullPointerException("UDP: previous protocol cannot be null");
                 
                 this.previousProtocol = previousProtocol;
-                this.previousProtocolDefined = true;
         }     
 }

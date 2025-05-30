@@ -1,0 +1,13 @@
+package com.netsim.standard.IPv4;
+
+import com.netsim.networkstack.Protocol;
+
+public class IP implements Protocol {
+      byte[] encapsulate(byte upperLayerPDU) {
+            return null;
+      }
+
+      byte[] decapsulate(byte lowerLayerPDU) {
+            return null;
+      }
+}
