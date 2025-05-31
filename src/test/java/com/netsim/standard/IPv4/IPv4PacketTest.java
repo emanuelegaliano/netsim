@@ -24,82 +24,82 @@ public class IPv4PacketTest {
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsNullSource() {
-            new IPv4Packet(null, DST, 4, 5, 0, 21, 0, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(null, DST, 4, 5, 0, 21, 0, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsNullDestination() {
-            new IPv4Packet(SRC, null, 4, 5, 0, 21, 0, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, null, 4, 5, 0, 21, 0, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsTosTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, -1, 21, 0, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, -1, 21, 0, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsTosTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 256, 21, 0, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 256, 21, 0, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsTotalLengthTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, -1, 0, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, -1, 0, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsTotalLengthTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 0x1_0000, 0, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 0x1_0000, 0, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsIdentificationTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, -1, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, -1, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsIdentificationTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0x1_0000, 0, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0x1_0000, 0, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsFlagsTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, -1, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, -1, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsFlagsTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 8, 0, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 8, 0, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsFragmentOffsetTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, -1, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, -1, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsFragmentOffsetTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0x2000, 0, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0x2000, 0, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsTtlTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, -1, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, -1, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsTtlTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, 0x1_0000, 0, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, 0x1_0000, 0, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsProtocolTooLow() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, 0, -1, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, 0, -1, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
         public void constructorRejectsProtocolTooHigh() {
-            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, 0, 0x1_0000, makeSegment(1));
+            new IPv4Packet(SRC, DST, 4, 5, 0, 21, 0, 0, 0, 0, 0x1_0000, makeSegment(1).toByte());
         }
 
         @Test(expected = IllegalArgumentException.class)
@@ -118,7 +118,7 @@ public class IPv4PacketTest {
                                             0,  // TOS
                                             ihl*4 + seg.toByte().length,
                                             0,0,0,0,0,
-                                            seg);
+                                            seg.toByte());
             byte[] header = pkt.getHeader();
             int b0 = header[0] & 0xFF;
             assertEquals("Version high 4 bits", version,  (b0 >>> 4) & 0xF);
@@ -135,7 +135,7 @@ public class IPv4PacketTest {
                                             5*4 + seg.toByte().length,
                                             0, flags, fragOff,
                                             0,0,
-                                            seg);
+                                            seg.toByte());
             byte[] header = pkt.getHeader();
             int ff = ((header[6] & 0xFF) << 8) | (header[7] & 0xFF);
             assertEquals("Flags extracted",          flags,   (ff >>> 13) & 0x7);
@@ -149,7 +149,7 @@ public class IPv4PacketTest {
                                             4, 5, 0,
                                             5*4 + seg.toByte().length,
                                             0,0,0,64,17,
-                                            seg);
+                                            seg.toByte());
             byte[] header = pkt.getHeader();
             byte[] srcBytes = SRC.byteRepresentation();
             byte[] dstBytes = DST.byteRepresentation();
@@ -170,7 +170,7 @@ public class IPv4PacketTest {
                                             4, ihl, 0,
                                             headerLen + seg.toByte().length,
                                             0,0,0,64,17,
-                                            seg);
+                                            seg.toByte());
             byte[] header = pkt.getHeader();
             for (int i = 20; i < headerLen; i++) {
                 assertEquals("Padding byte at " + i, 0, header[i]);
@@ -188,7 +188,7 @@ public class IPv4PacketTest {
                                             4, ihl, 0,
                                             ihl*4 + segBytes.length,
                                             0,0,0,64,17,
-                                            seg);
+                                            seg.toByte());
             byte[] datagram = pkt.toByte();
             int headerLen = ihl * 4;
             byte[] afterHeader = Arrays.copyOfRange(datagram, headerLen, datagram.length);

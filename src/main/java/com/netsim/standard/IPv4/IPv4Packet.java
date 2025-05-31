@@ -4,12 +4,10 @@ import java.nio.ByteBuffer;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.networkstack.PDU;
-import com.netsim.standard.UDP.UDPSegment;
-
 /**
  * Represents a minimal IPv4 datagram (base header, no options),
  * with TTL and Protocol fields expanded to 16 bits each,
- * and checksum computed on-the-fly.
+ * and checksum not computed.
  */
 public class IPv4Packet extends PDU {
       private final VersionIHL versionAndIHL;
@@ -19,7 +17,7 @@ public class IPv4Packet extends PDU {
       private final short flagsAndFragmentOffset;
       private final short ttl;       // now 16-bit
       private final short protocol;  // now 16-bit
-      private final UDPSegment payload;
+      private final byte[] payload;
 
       /**
        * Constructs a new IPv4 packet (header base, without options).
@@ -49,7 +47,7 @@ public class IPv4Packet extends PDU {
                         int fragmentOffset,
                         int ttl,
                         int protocol,
-                        UDPSegment payload) throws IllegalArgumentException {
+                        byte[] payload) throws IllegalArgumentException {
                   
             super(source, destination);
             if (source == null || destination == null)
@@ -82,27 +80,24 @@ public class IPv4Packet extends PDU {
                   throw new IllegalArgumentException("IPv4Packet: TTL must be 0…65535");
             this.ttl = (short) ttl;
 
-            if(protocol < 0 || protocol > 0xFFFF) {
+            if(protocol < 0 || protocol > 0xFFFF)
                   throw new IllegalArgumentException("IPv4Packet: protocol must be 0…65535");
-            }
             this.protocol = (short) protocol;
 
-            if(payload == null) {
-                  throw new IllegalArgumentException("IPv4Packet: payload cannot be null");
-            }
+            if(payload == null || payload.length == 0) 
+                  throw new IllegalArgumentException("IPv4Packet: payload cannot be null or 0");
             this.payload = payload;
       }
 
       /**
        * Builds the IPv4 header (version/IHL, TOS, total length, identification,
-       * flags+offset, TTL, protocol, checksum, source & destination) in network order,
-       * computing the checksum on-the-fly.
+       * flags+offset, TTL, protocol, source & destination) in network order,
+       * not computing checksum.
        *
        * @return a byte[] of length IHL*4 (20 bytes when IHL=5)
        */
       public byte[] getHeader() {
             int headerLen = versionAndIHL.getIhl() * 4;
-            // build header with checksum placeholder = 0
             ByteBuffer buf = ByteBuffer.allocate(headerLen);
             buf.put(versionAndIHL.toByte());
             buf.put(tos);
@@ -126,9 +121,8 @@ public class IPv4Packet extends PDU {
       @Override
       public byte[] toByte() {
             byte[] headerBytes  = getHeader();
-            byte[] payloadBytes = payload.toByte();
-            ByteBuffer buf = ByteBuffer.allocate(headerBytes.length + payloadBytes.length);
-            buf.put(headerBytes).put(payloadBytes);
+            ByteBuffer buf = ByteBuffer.allocate(headerBytes.length + payload.length);
+            buf.put(headerBytes).put(payload);
             return buf.array();
       }
 }
