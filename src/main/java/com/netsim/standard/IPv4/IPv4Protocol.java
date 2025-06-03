@@ -112,8 +112,8 @@ public class IPv4Protocol implements Protocol {
             if(this.MTU < headerLen + 1)
                   throw new RuntimeException("IP: MTU (" + MTU + ") is too small to fit any payload");
 
-            int maxDataPerFragment = this.MTU - headerLen;
-            int fragmentUnit = 8;
+            final int maxDataPerFragment = this.MTU - headerLen;
+            final int fragmentUnit = 8;
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             int totalPayload = upperLayerPDU.length;
