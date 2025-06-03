@@ -21,7 +21,7 @@ public class NetworkAdapter {
                   throw new IllegalArgumentException("NetworkAdapter: name cannot be null");
 
             if(macAddress == null)
-                  throw new IllegalArgumentException("NetworkAdapter: mac address cannot be null");s
+                  throw new IllegalArgumentException("NetworkAdapter: mac address cannot be null");
 
             this.name = name;
             this.MTU = MTU;
@@ -45,6 +45,16 @@ public class NetworkAdapter {
       /** @return the mac address of the Adapter */
       public Mac getMacAddress() {
             return this.macAddress;
+      }
+
+      /** @return if the Adapter is up for sending/receiving */
+      public boolean isUp() {
+            return this.isUp;
+      }
+
+      /** @return if the Adapter has promiscuos mode active */
+      public boolean promiscuousMode() {
+            return this.promiscuousMode;
       }
 
       /** set Adapter up for sending/receiving */

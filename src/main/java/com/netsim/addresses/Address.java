@@ -73,7 +73,7 @@ public abstract class Address {
         if(this.address == null)
             throw new NullPointerException("Address is not defined");
 
-        byte[] octets = byteRepresentation(); // o toByte()
+        byte[] octets = this.byteRepresentation(); // o toByte()
         StringBuilder sb = new StringBuilder(3 * octets.length + octets.length - 1);
         for (int i = 0; i < octets.length; i++) {
             sb.append(octets[i] & 0xFF);

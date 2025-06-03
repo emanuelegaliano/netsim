@@ -1,0 +1,9 @@
+package com.netsim.table;
+
+import com.netsim.node.NetworkAdapter;
+import com.netsim.addresses.IPv4;
+
+
+public class RoutingTables implements NetworkTable<IPv4, IPv4> {
+      
+}
