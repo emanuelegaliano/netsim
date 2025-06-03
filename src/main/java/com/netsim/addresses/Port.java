@@ -79,14 +79,14 @@ public class Port extends Address {
     }
 
     /**
-     * @return il valore del port (0–65535)
+     * @return port value (0–65535)
      */
     public int getPort() {
         return port;
     }
 
     /**
-     * Converte un intero 0–65535 in un array di 2 byte (big-endian).
+     * Converts an integer (0–65535) to a 2 bytes array (big-endian).
      */
     private static byte[] shortToBytes(int port) {
         return new byte[] {
@@ -96,24 +96,21 @@ public class Port extends Address {
     }
     
     /**
-    * @param data array di 2 byte che codifica il numero di porta
-    * @return una nuova istanza di Port con quel numero
-    * @throws IllegalArgumentException se data è null o non di lunghezza 2,
-    *         o se il valore risultante è fuori dal range 0–65535
+    * @param data 2 bytes array of Port
+    * @return a new instance of Port using that number
+    * @throws IllegalArgumentException if either data is null, data.length != 2
     */
     public static Port fromBytes(byte[] data) {
         if(data == null) 
             throw new IllegalArgumentException("Port.fromBytes: input null");
-        if(data.length != 2) {
+        if(data.length != 2)
             throw new IllegalArgumentException(
                 "Port.fromBytes: 2 bytes expected but received " 
                 + data.length);
-        }
 
-        // interpreta in big-endian
+        // big-endian
         int portValue = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF);
 
-        // il costruttore Port(String) sfrutta parse() interno per validare e settare
         return new Port(Integer.toString(portValue));
     }
 }
