@@ -23,19 +23,19 @@ public class ArpTable implements NetworkTable<IP, Mac> {
     /**
      * Looks up the MAC address associated with the given IPv4 key.
      *
-     * @param key the IPv4 address to resolve
+     * @param key the IP address to resolve
      * @return the Mac address if present
      * @throws IllegalArgumentException if key or device is null
-     * @throws NullPointerException     if no entry exists for that IPv4
+     * @throws NullPointerException if no entry exists for that IPv4
      */
-    public Mac lookup(IP key) {
+    public Mac lookup(IP key) throws IllegalArgumentException, NullPointerException {
         if(key == null) 
-            throw new IllegalArgumentException("ArpTable.lookup: key (IPv4) cannot be null");
+            throw new IllegalArgumentException("ArpTable: key cannot be null");
 
-        Mac mac = table.get(key);
+        Mac mac = this.table.get(key);
         if(mac == null)
             throw new NullPointerException(
-                "ArpTable.lookup: no MAC entry for IP " + key.stringRepresentation()
+                "ArpTable: no MAC entry for IP " + key.stringRepresentation()
             );
 
         return mac;
@@ -48,13 +48,13 @@ public class ArpTable implements NetworkTable<IP, Mac> {
      * @param value the Mac address (cannot be null)
      * @throws IllegalArgumentException if key, value, or device is null
      */
-    public void add(IP key, Mac value) {
+    public void add(IP key, Mac value) throws IllegalArgumentException {
         if(key == null)
             throw new IllegalArgumentException("ArpTable.add: key (IPv4) cannot be null");
         if(value == null)
             throw new IllegalArgumentException("ArpTable.add: value (Mac) cannot be null");
 
-        table.put(key, value);
+        this.table.put(key, value);
     }
 
     /**
@@ -64,14 +64,15 @@ public class ArpTable implements NetworkTable<IP, Mac> {
      * @throws IllegalArgumentException if key is null
      * @throws NullPointerException if no entry exists for that IPv4
      */
-    public void remove(IP key) {
+    public void remove(IP key) throws IllegalArgumentException, NullPointerException {
         if(key == null) 
             throw new IllegalArgumentException("ArpTable.remove: key (IPv4) cannot be null");
-        if(!table.containsKey(key)) 
+
+        Mac macCheck = this.table.remove(key);
+
+        if(macCheck == null) 
             throw new NullPointerException(
                 "ArpTable.remove: cannot remove IP " + key.stringRepresentation() + " (not present)"
             );
-
-        table.remove(key);
     }
 }

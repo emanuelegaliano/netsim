@@ -71,7 +71,7 @@ public class NetworkAdapter {
             this.promiscuousMode = true;
       }
 
-      public void setPromiscuosModeFalse() {
+      public void setPromiscuosModeOff() {
             this.promiscuousMode = false;
       }
 }
