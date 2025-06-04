@@ -83,4 +83,8 @@ public class Mac extends Address {
 
         return sb.toString();
     }
+
+    public static Mac broadcast() {
+        return new Mac("FF:FF:FF:FF:FF:FF");
+    }
 }
