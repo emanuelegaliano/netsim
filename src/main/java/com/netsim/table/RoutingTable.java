@@ -9,19 +9,28 @@ import java.util.Map;
 public class RoutingTable implements NetworkTable<IPv4, IPv4> {
       private HashMap<IPv4, HashMap<NetworkAdapter, IPv4>> table;
 
+      /**
+       * creates the internal HashMap
+       */
       public RoutingTable() {      
             this.table = new HashMap<>();
       }
 
-      public IPv4 lookup(IPv4 key, NetworkAdapter device) throws IllegalArgumentException, NullPointerException {
-            if(key == null)
-                  throw new IllegalArgumentException("RoutingTable: key cannot be null");
+      /**
+       * @param destination the destination of route
+       * @param device the Network Adapter the containts the route
+       * @throws IllegalArgumentException if any of the arguments is null
+       * @throws NullPointerException if destination is not found or device does contain route
+       */
+      public IPv4 lookup(IPv4 destination, NetworkAdapter device) throws IllegalArgumentException, NullPointerException {
+            if(destination == null)
+                  throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
             if(device == null)
                   throw new IllegalArgumentException("RoutingTable: device cannot be null");
 
             
-            HashMap<NetworkAdapter, IPv4> inner = this.table.get(key);
+            HashMap<NetworkAdapter, IPv4> inner = this.table.get(destination);
             if(inner == null)
                   throw new NullPointerException("RoutingTable: route not found");
 
@@ -31,48 +40,62 @@ public class RoutingTable implements NetworkTable<IPv4, IPv4> {
                         "RoutingTable: device " 
                         + device.getName() 
                         + " has no route with ip: "
-                        + key.stringRepresentation()
+                        + destination.stringRepresentation()
                   );
 
             return address;
       }
 
-      public void add(IPv4 key, IPv4 value, NetworkAdapter device) throws IllegalArgumentException {
-            if(key == null)
-                  throw new IllegalArgumentException("RoutingTable: key cannot be null");
+      /**
+       * @param destination the destination of new route
+       * @param nextHop the value ip used in tuple (device, nextHop)
+       * @param device the network adapter used in tuple (device, nextHop) 
+       * @throws IllegalArgumentException if any of the arguments is null
+       */
+      public void add(IPv4 destination, IPv4 nextHop, NetworkAdapter device) throws IllegalArgumentException {
+            if(destination == null)
+                  throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
-            if(value == null)
-                  throw new IllegalArgumentException("RoutingTable: value cannot be null");
+            if(nextHop == null)
+                  throw new IllegalArgumentException("RoutingTable: nextHop cannot be null");
 
             if(device == null)
                   throw new IllegalArgumentException("RoutingTable: device cannot be null");
 
-            this.table.computeIfAbsent(key, r -> new HashMap<>())
-                      .put(device, value);
+            this.table.computeIfAbsent(destination, r -> new HashMap<>())
+                      .put(device, nextHop);
       }
 
-      public void remove(IPv4 key, IPv4 value, NetworkAdapter device) throws IllegalArgumentException, NullPointerException {
-            if(key == null)
-                  throw new IllegalArgumentException("RoutingTable: key cannot be null");
+      /**
+       * @param destination the destination of the route that will be removed
+       * @param nextHop the value ip used in tuple (device, nextHop) from route that will be removed
+       * @param device the network adapter used in tuple (device, nextHop) from route that will be removed
+       * @throws IllegalArgumentException if any of the arguments is null
+       * @throws NullPointerException if destination is not found or device does not contain route
+       */
+      public void remove(IPv4 destination, IPv4 nextHop, NetworkAdapter device) throws IllegalArgumentException, NullPointerException {
+            if(destination == null)
+                  throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
-            if(value == null)
-                  throw new IllegalArgumentException("RoutingTable: value cannot be null");
+            if(nextHop == null)
+                  throw new IllegalArgumentException("RoutingTable: nextHop cannot be null");
 
             if(device == null)
                   throw new IllegalArgumentException("RoutingTable: device cannot be null");
 
-            HashMap<NetworkAdapter, IPv4> inner = this.table.get(key);
+            HashMap<NetworkAdapter, IPv4> inner = this.table.get(destination);
             if(inner == null)
                   throw new NullPointerException(
                         "RoutingTable: unable to remove " 
-                        + key.stringRepresentation()
+                        + destination.stringRepresentation()
                         + " because is not in the table");
 
             inner.remove(device);
             if(inner.isEmpty())
-                  this.table.remove(key);
+                  this.table.remove(destination);
       }
 
+      /** @return the size of the internal hashmap */
       public int size() {
             int count = 0;
             for (Map<NetworkAdapter, IPv4> inner : table.values()) {
@@ -80,7 +103,8 @@ public class RoutingTable implements NetworkTable<IPv4, IPv4> {
             }
             return count;
       }
-      
+
+      /** clears internal hashmap */
       public void clear() {
             this.table.clear();
       }
