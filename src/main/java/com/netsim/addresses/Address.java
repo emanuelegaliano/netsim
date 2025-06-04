@@ -83,4 +83,17 @@ public abstract class Address {
         }
         return sb.toString();
     }
+    
+    @Override   
+    public boolean equals(Object obj) {
+        if(obj == null)
+            return false;
+
+        if(!obj.getClass().isInstance(this))
+            return false;
+
+        Address other = (Address)obj;
+
+        return this.byteRepresentation() == other.byteRepresentation();
+    }
 }
