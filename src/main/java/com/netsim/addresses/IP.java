@@ -1,5 +1,7 @@
 package com.netsim.addresses;
 
+import java.util.Arrays;
+
 /**
  * Abstract base class representing an IP address (e.g., IPv4, IPv6).
  * It encapsulates the address bytes and a subnet mask, and provides
@@ -104,15 +106,29 @@ public abstract class IP extends Address {
         return this.mask.getPrefix();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null)
+            return false;
+
+        if(!obj.getClass().isInstance(this))
+            return false;
+
+        IP other = (IP)obj;
+        return other == this && other.getMask() == this.getMask();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(this.address);
+        result = 31 * result + (this.mask != null ? mask.hashCode() : 0);
+        return result;
+    }
+
     public abstract boolean isLoopback();
-
     public abstract boolean isMulticast();
-
     public abstract boolean isBroadcast();
-
     public abstract boolean isPrivate();
-
     public abstract boolean isLinkLocal();
-
     public abstract boolean isUnspecified();
 }

@@ -1,5 +1,7 @@
 package com.netsim.addresses;
 
+import java.util.Arrays;
+
 public abstract class Address {
     protected int bytesLen;
     protected byte[] address;
@@ -95,5 +97,12 @@ public abstract class Address {
         Address other = (Address)obj;
 
         return this.byteRepresentation() == other.byteRepresentation();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Arrays.hashCode(this.address);
+        result = 31 * result;
+        return result;
     }
 }

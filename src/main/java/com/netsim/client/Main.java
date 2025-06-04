@@ -25,7 +25,7 @@ public class Main {
             0, 
             64,
             17, 
-            1500);
+            28);
         IdentityProtocol identity = new IdentityProtocol();
 
         http.setNext(udp);

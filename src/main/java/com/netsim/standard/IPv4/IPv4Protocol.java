@@ -93,10 +93,12 @@ public class IPv4Protocol implements Protocol {
             this.previousProtocol = null;
       }
 
+      /** @return the source ip */
       public IPv4 getSourceIP() {
             return this.source;
       }
-
+      
+      /** @return the destinations ip */
       public IPv4 getDestinationIP() {
             return this.destination;
       }

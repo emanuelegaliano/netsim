@@ -1,107 +1,72 @@
 package com.netsim.table;
 
-import com.netsim.node.NetworkAdapter;
-import com.netsim.addresses.IPv4;
-
 import java.util.HashMap;
-import java.util.Map;
 
-public class RoutingTable implements NetworkTable<IPv4, IPv4> {
-      private HashMap<IPv4, HashMap<NetworkAdapter, IPv4>> table;
+import com.netsim.addresses.IP;
 
-      /**
-       * creates the internal HashMap
-       */
-      public RoutingTable() {      
+public class RoutingTable implements NetworkTable<IP, RoutingInfo> {
+      private HashMap<IP, RoutingInfo> table;
+
+      public RoutingTable() {
             this.table = new HashMap<>();
       }
 
       /**
        * @param destination the destination of route
-       * @param device the Network Adapter the containts the route
-       * @throws IllegalArgumentException if any of the arguments is null
-       * @throws NullPointerException if destination is not found or device does contain route
+       * @throws IllegalArgumentException if destination is null
+       * @throws NullPointerException if destination is not found 
        */
-      public IPv4 lookup(IPv4 destination, NetworkAdapter device) throws IllegalArgumentException, NullPointerException {
+      public RoutingInfo lookup(IP destination) throws IllegalArgumentException, NullPointerException {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
-            if(device == null)
-                  throw new IllegalArgumentException("RoutingTable: device cannot be null");
-
-            
-            HashMap<NetworkAdapter, IPv4> inner = this.table.get(destination);
-            if(inner == null)
+            RoutingInfo ri = this.table.get(destination);
+            if(ri == null)
                   throw new NullPointerException("RoutingTable: route not found");
-
-            IPv4 address = inner.get(device);
-            if(address == null)
-                  throw new NullPointerException(
-                        "RoutingTable: device " 
-                        + device.getName() 
-                        + " has no route with ip: "
-                        + destination.stringRepresentation()
-                  );
-
-            return address;
+                  
+            return ri;
       }
 
       /**
        * @param destination the destination of new route
-       * @param nextHop the value ip used in tuple (device, nextHop)
-       * @param device the network adapter used in tuple (device, nextHop) 
-       * @throws IllegalArgumentException if any of the arguments is null
+       * @param route a class for info routing on pair (device, nextHop)
+       * @throws IllegalArgumentException if either desination or route is null
+       * @throws RuntimeException if the route is already contained
        */
-      public void add(IPv4 destination, IPv4 nextHop, NetworkAdapter device) throws IllegalArgumentException {
+      public void add(IP destination, RoutingInfo route) throws IllegalArgumentException, RuntimeException {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
-            if(nextHop == null)
-                  throw new IllegalArgumentException("RoutingTable: nextHop cannot be null");
+            if(route == null)
+                  throw new IllegalArgumentException("RoutingTable: route cannot be null");
 
-            if(device == null)
-                  throw new IllegalArgumentException("RoutingTable: device cannot be null");
+            if(this.table.containsKey(destination))
+                  throw new RuntimeException("RoutingTable: route already contained");
 
-            this.table.computeIfAbsent(destination, r -> new HashMap<>())
-                      .put(device, nextHop);
+            this.table.put(destination, route);
       }
 
-      /**
+            /**
        * @param destination the destination of the route that will be removed
-       * @param nextHop the value ip used in tuple (device, nextHop) from route that will be removed
-       * @param device the network adapter used in tuple (device, nextHop) from route that will be removed
-       * @throws IllegalArgumentException if any of the arguments is null
-       * @throws NullPointerException if destination is not found or device does not contain route
+       * @throws IllegalArgumentException if destination null
        */
-      public void remove(IPv4 destination, IPv4 nextHop, NetworkAdapter device) throws IllegalArgumentException, NullPointerException {
+      public void remove(IP destination) throws IllegalArgumentException {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
-            if(nextHop == null)
-                  throw new IllegalArgumentException("RoutingTable: nextHop cannot be null");
-
-            if(device == null)
-                  throw new IllegalArgumentException("RoutingTable: device cannot be null");
-
-            HashMap<NetworkAdapter, IPv4> inner = this.table.get(destination);
-            if(inner == null)
+            RoutingInfo routeCheck = this.table.remove(destination);
+            if(routeCheck == null)
                   throw new NullPointerException(
                         "RoutingTable: unable to remove " 
                         + destination.stringRepresentation()
-                        + " because is not in the table");
-
-            inner.remove(device);
-            if(inner.isEmpty())
-                  this.table.remove(destination);
+                        + " because is not in the table"
+                  );
       }
 
-      /** @return the size of the internal hashmap */
+      /**
+       * @return the size of the internal hashmap */
       public int size() {
-            int count = 0;
-            for (Map<NetworkAdapter, IPv4> inner : table.values()) {
-                  count += inner.size();
-            }
-            return count;
+            return this.table.size();
       }
 
       /** clears internal hashmap */
