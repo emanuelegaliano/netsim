@@ -65,16 +65,15 @@ public class UDP implements Protocol {
          * Encapsulating message in a raw byte array adding 
          * UDP header
          * @throws IllegalArgumentException if upperLayerPDU is null or its length is 0
-         * @throws RuntimeException if the next protocol of UDP is not defined or
-         * if something goes wrong when encapsulating 
+         * @throws NullPointerException if the next protocol of UDP is not defined
+         * @throws cdRuntimException if something goes wrong when encapsulating 
          */
-        public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, RuntimeException {
+        public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, NullPointerException, RuntimeException {
             if(upperLayerPDU == null || upperLayerPDU.length == 0)
                 throw new IllegalArgumentException("UDP: payload on encapsulation cannot be null");
 
             if(this.nextProtocol == null)
-                throw new RuntimeException("UDP: next protocol is not defined");
-
+                throw new NullPointerException("UDP: next protocol is not defined");
 
             int sequenceNumber = 0; 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -167,14 +166,14 @@ public class UDP implements Protocol {
          * Decapsulating message in a raw byte array 
          * removing UDP header
          * @throws IllegalArgumentException if lowerLayerPDU is null or its length is 0
-         * @throws RuntimeException if previous protocol of UDP is not defined
+         * @throws NullPointerException if previous protocol of UDP is not defined
          */
-        public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, RuntimeException {
+        public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, NullPointerException {
             if(lowerLayerPDU == null || lowerLayerPDU.length == 0)
                 throw new IllegalArgumentException("UDP: decapsulation received null or empty segments data");
 
             if(this.previousProtocol == null)
-                throw new RuntimeException("UDP: previous protocol not defined");
+                throw new NullPointerException("UDP: previous protocol not defined");
 
 
             // 1) Parsiamo i segmenti "grezzi" in oggetti UDPSegment

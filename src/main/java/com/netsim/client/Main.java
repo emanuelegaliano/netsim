@@ -9,6 +9,7 @@ import com.netsim.networkstack.IdentityProtocol;
 import com.netsim.standard.HTTP.HTTP;
 import com.netsim.standard.HTTP.HTTPMethods;
 import com.netsim.standard.IPv4.IPv4Protocol;
+import com.netsim.standard.SimpleDLL.SimpleDLLProtocol;
 import com.netsim.standard.UDP.UDP;
 import com.netsim.addresses.*;
 
@@ -25,13 +26,19 @@ public class Main {
             0, 
             64,
             17, 
-            28);
+            1500);
+        SimpleDLLProtocol dll = new SimpleDLLProtocol(
+            new Mac("AA:BB:CC:DD:FF:EE"), 
+            new Mac("AA:BB:CC:EE:FF:DD")
+        );
         IdentityProtocol identity = new IdentityProtocol();
 
         http.setNext(udp);
         udp.setNext(ipv4);
-        ipv4.setNext(identity);
+        ipv4.setNext(dll);
+        dll.setNext(identity);
 
+        dll.setPrevious(ipv4);
         ipv4.setPrevious(udp);
         udp.setPrevious(http);
         http.setPrevious(identity);
@@ -43,7 +50,7 @@ public class Main {
         byte[] wire = http.encapsulate(appPayload);
         System.out.println("Wire-format length: " + wire.length + " bytes");
 
-        byte[] rawHttp = ipv4.decapsulate(wire);
+        byte[] rawHttp = dll.decapsulate(wire);
         String httpText = new String(rawHttp, StandardCharsets.US_ASCII);
         System.out.println("\nReassembled HTTP request:\n" + httpText);
     }

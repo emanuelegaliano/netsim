@@ -28,7 +28,7 @@ public class NetworkAdapter {
             this.macAddress = macAddress;
             
             // settings
-            this.isUp = false;
+            this.isUp = true;
             this.promiscuousMode = false;
       }
 

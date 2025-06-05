@@ -40,15 +40,15 @@ public class HTTP implements Protocol {
      * @param content the request body (for GET can be empty or ignored)
      * @return an HTTPRequest ready to be sent downstream
      * @throws IllegalArgumentException if pdu is null
-     * @throws RuntimeException if next protocol of the chain is 
+     * @throws NullPointerException if next protocol of the chain is 
      * not defined (aka nextProtocolDefined = false)
      */
-    public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, RuntimeException {
+    public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, NullPointerException {
         if(upperLayerPDU.length == 0 || upperLayerPDU == null) 
             throw new IllegalArgumentException("HTTPRequest: pdu is null or its length is 0");
             
         if(this.nextProtocol == null)
-            throw new RuntimeException("HTTP: next protocol is not defined");
+            throw new NullPointerException("HTTP: next protocol is not defined");
 
 
         HTTPRequest request = new HTTPRequest(this.method, this.path, this.host, upperLayerPDU);
@@ -61,15 +61,15 @@ public class HTTP implements Protocol {
      * @param request the HTTPRequest to decode
      * @return an instance of StringPayload
      * @throws IllegalArgumentException if request is null
-     * @throws RuntimeException if previous protocol of the chain is 
+     * @throws NullPointerException if previous protocol of the chain is 
      * not defined (aka previousProtocolDefined = false)
      */
     @Override
-    public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, RuntimeException {
+    public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, NullPointerException {
         if(lowerLayerPDU == null)
             throw new IllegalArgumentException("HTTPRequest decapsulation is null");
         if(this.previousProtocol == null)
-            throw new RuntimeException("HTTP: previous protocol is not defined");
+            throw new NullPointerException("HTTP: previous protocol is not defined");
 
         String raw = new String(lowerLayerPDU, StandardCharsets.US_ASCII);
         int sep = raw.indexOf("\r\n\r\n");

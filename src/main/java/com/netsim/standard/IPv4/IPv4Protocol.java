@@ -103,12 +103,18 @@ public class IPv4Protocol implements Protocol {
             return this.destination;
       }
 
-      public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, RuntimeException {
+      /**
+       * Encapsulate message in a raw byte array adding IPv4 header
+       * @throws IllegalArgumentException if upperLayerPDU is null or its length is 0
+       * @throws NullPointerException if next protocol is null
+       * @throws RuntimeException if MTU < headerLen (IHL * 4)
+       */
+      public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, NullPointerException, RuntimeException {
             if(upperLayerPDU == null || upperLayerPDU.length == 0)
                   throw new IllegalArgumentException("IP: upperLayerPDU cannot be null or empty");
 
             if(this.nextProtocol == null)
-                  throw new RuntimeException("IP: next protocol is null");
+                  throw new NullPointerException("IP: next protocol is null");
 
             int headerLen = this.IHL * 4;
             if(this.MTU < headerLen + 1)
@@ -165,16 +171,21 @@ public class IPv4Protocol implements Protocol {
                   offsetBytes += thisFragmentDataLen;
             }
 
-                  return this.nextProtocol.encapsulate(out.toByteArray());
-            }
+            return this.nextProtocol.encapsulate(out.toByteArray());
+      }
 
-      public byte[] decapsulate(byte[] lowerLayerPDU) {
+      /**
+       * Decapsulate message in a raw byte array removing IPv4 header
+       * @throws IllegalArgumentException if lowerLayerPDU is null or length is 0, 
+       *                                  if any of IPv4 packet arguments is setted wrong
+       * @throws NullPointerException if previousProtocol is null
+       */
+      public byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException, NullPointerException {
             // 1. Error checks
-            if (lowerLayerPDU == null || lowerLayerPDU.length == 0) {
+            if(lowerLayerPDU == null || lowerLayerPDU.length == 0)
                   throw new IllegalArgumentException("IP: lowerLayerPDU cannot be null or empty");
-            }
             if(this.previousProtocol == null) 
-                  throw new RuntimeException("IP: previous protocol is null");
+                  throw new NullPointerException("IP: previous protocol is null");
             
 
             final int MIN_IPV4_HEADER = 20;
@@ -183,33 +194,29 @@ public class IPv4Protocol implements Protocol {
             java.util.List<Fragment> fragments = new java.util.ArrayList<>();
 
             // 2. Parse each IPv4 packet fragment
-            while (in.available() >= MIN_IPV4_HEADER) {
+            while(in.available() >= MIN_IPV4_HEADER) {
                   // Peek first 4 bytes to get IHL and Total Length
                   byte[] first4 = new byte[4];
                   in.mark(4);
                   int read = in.read(first4, 0, 4);
                   in.reset();
-                  if (read < 4) {
+                  if(read < 4)
                         throw new IllegalArgumentException("IP: incomplete header");
-                  }
                   int versionIhl = first4[0] & 0xFF;
                   int ihl = versionIhl & 0x0F;
                   int headerLen = ihl * 4;
-                  if (ihl < 5 || headerLen < MIN_IPV4_HEADER) {
+                  if(ihl < 5 || headerLen < MIN_IPV4_HEADER) 
                         throw new IllegalArgumentException("IP: invalid IHL: " + ihl);
-                  }
 
                   // Read the full header to extract fields
                   byte[] header = new byte[headerLen];
                   int hread = in.read(header, 0, headerLen);
-                  if (hread < headerLen) {
+                  if(hread < headerLen)
                         throw new IllegalArgumentException("IP: incomplete IPv4 header");
-                  }
                   // Total Length is bytes 2–3
                   int totalLen = ((header[2] & 0xFF) << 8) | (header[3] & 0xFF);
-                  if (totalLen < headerLen || totalLen > in.available() + headerLen) {
+                  if(totalLen < headerLen || totalLen > in.available() + headerLen) 
                         throw new IllegalArgumentException("IP: invalid Total Length: " + totalLen);
-                  }
 
                   // Flags+FragmentOffset are bytes 6–7
                   int flagsAndOffset = ((header[6] & 0xFF) << 8) | (header[7] & 0xFF);
@@ -220,9 +227,8 @@ public class IPv4Protocol implements Protocol {
                   int dataLen = totalLen - headerLen;
                   byte[] chunk = new byte[dataLen];
                   int dread = in.read(chunk, 0, dataLen);
-                  if (dread < dataLen) {
+                  if(dread < dataLen) 
                         throw new IllegalArgumentException("IP: incomplete IPv4 payload");
-                  }
 
                   fragments.add(new Fragment(dataOffsetBytes, chunk));
             }
@@ -234,15 +240,13 @@ public class IPv4Protocol implements Protocol {
             int reassembledLen = 0;
             for (Fragment f : fragments) {
                   int end = f.offset + f.data.length;
-                  if (end > reassembledLen) {
+                  if(end > reassembledLen)
                         reassembledLen = end;
-                  }
             }
 
             byte[] reassembled = new byte[reassembledLen];
-            for (Fragment f : fragments) {
+            for(Fragment f : fragments) 
                   System.arraycopy(f.data, 0, reassembled, f.offset, f.data.length);
-            }
 
             // 4. Pass the reassembled byte[] to previousProtocol.decapsulate
             return this.previousProtocol.decapsulate(reassembled);
