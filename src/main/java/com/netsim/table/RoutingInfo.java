@@ -1,7 +1,7 @@
 package com.netsim.table;
 
 import com.netsim.addresses.IP;
-import com.netsim.node.NetworkAdapter;
+import com.netsim.networkstack.NetworkAdapter;
 
 public class RoutingInfo {
       private NetworkAdapter device;

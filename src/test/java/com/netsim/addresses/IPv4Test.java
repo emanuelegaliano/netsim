@@ -120,4 +120,5 @@ public class IPv4Test {
         assertEquals("Address byte array should have length 4", 4, bytes.length);
         assertEquals("Address should be represented in 32 bits", 32, bytes.length * 8);
     }
+    
 }

@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
  * to an encapsulated PDU payload.
  */
 public class SimpleDLLFrame extends PDU {
-            private final byte[] payload;
+      private final byte[] payload;
 
       /**
        * Constructs a new SimpleDLLFrame.

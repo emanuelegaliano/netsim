@@ -1,5 +1,7 @@
 package com.netsim.networkstack;
 
+import com.netsim.addresses.Address;
+
 /**
  * Protocol interface for chain of responsibility
  * network stack
@@ -26,10 +28,28 @@ public interface Protocol {
      * Method to set next protocol in the chain
      * @param nextProtocol the next protocol
      */
-    public abstract void setNext(Protocol nextProtocol);
+    public void setNext(Protocol nextProtocol);
     /**
      * Method to set previous protocol in the chain
      * @param previousProtocol the previous protocol
      */
-    public abstract void setPrevious(Protocol previousProtocol);
+    public void setPrevious(Protocol previousProtocol);
+
+    /**
+     * Using non-static method because in java it's not possible 
+     * to define a static method in interfaces without its implementation
+     * return nulls if a protocol does not have source
+     * @param pdu the payload of the protocol
+     * @return the source address
+     */
+    public Address extractSource(byte[] pdu);
+
+    /**
+     * Using non-static method because in java it's not possible 
+     * to define a static method in interfaces without its implementation.
+     * return nulls if a protocol does not have destination
+     * @param pdu the payload of the protocol
+     * @return the destination address
+     */
+    public Address extractDestination(byte[] pdu);
 }

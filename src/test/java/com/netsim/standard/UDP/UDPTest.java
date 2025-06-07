@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import com.netsim.addresses.Port;
 import com.netsim.networkstack.Protocol;
+import com.netsim.networkstack.IdentityProtocol;
 
 public class UDPTest {
     private static final Port SRC = new Port("1000");
@@ -24,6 +25,8 @@ public class UDPTest {
         payload = "HELLOWORLD".getBytes(StandardCharsets.US_ASCII);
         udp = new UDP(1024, SRC, DST);  // MSS large enough for single segment
     }
+
+    // —— Constructor tests —— //
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsZeroMSS() {
@@ -52,6 +55,8 @@ public class UDPTest {
         assertEquals("MSS", 1024, udp.getMSS());
     }
 
+    // —— encapsulate(...) tests —— //
+
     @Test(expected = IllegalArgumentException.class)
     public void encapsulateThrowsOnNull() {
         udp.encapsulate(null);
@@ -75,12 +80,7 @@ public class UDPTest {
     @Test
     public void encapsulateSingleSegment() {
         // stub next protocol echoes input
-        Protocol stubNext = new Protocol() {
-            @Override public byte[] encapsulate(byte[] pdu) { return pdu; }
-            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
-            @Override public void setNext(Protocol next) {}
-            @Override public void setPrevious(Protocol prev) {}
-        };
+        Protocol stubNext = new IdentityProtocol();
         udp.setNext(stubNext);
 
         byte[] datagram = udp.encapsulate(payload);
@@ -94,12 +94,7 @@ public class UDPTest {
         // set MSS small to force fragmentation
         udp = new UDP(4, SRC, DST);
 
-        Protocol stubNext = new Protocol() {
-            @Override public byte[] encapsulate(byte[] pdu) { return pdu; }
-            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
-            @Override public void setNext(Protocol next) {}
-            @Override public void setPrevious(Protocol prev) {}
-        };
+        Protocol stubNext = new IdentityProtocol();
         udp.setNext(stubNext);
 
         byte[] datagram = udp.encapsulate(payload);
@@ -119,6 +114,8 @@ public class UDPTest {
         assertEquals("total datagram length", index, datagram.length);
     }
 
+    // —— decapsulate(...) tests —— //
+
     @Test(expected = IllegalArgumentException.class)
     public void decapsulateThrowsOnNull() {
         udp.decapsulate(null);
@@ -131,7 +128,7 @@ public class UDPTest {
 
     @Test(expected = RuntimeException.class)
     public void decapsulateThrowsWhenPreviousNotDefined() {
-        // build a minimal length-prefixed buffer
+        // build a minimal length‐prefixed buffer
         ByteBuffer buf = ByteBuffer.allocate(4);
         buf.putInt(0);
         udp.decapsulate(buf.array());
@@ -153,17 +150,11 @@ public class UDPTest {
 
         byte[] b1 = s1.toByte(), b0 = s0.toByte();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        // write them back‐to‐back, no length prefixes
         out.write(b1);
         out.write(b0);
 
         // stub previous protocol that just echoes the payload
-        Protocol stubPrev = new Protocol() {
-            @Override public byte[] encapsulate(byte[] pdu) { return pdu; }
-            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
-            @Override public void setNext(Protocol next)    {}
-            @Override public void setPrevious(Protocol prev){}
-        };
+        Protocol stubPrev = new IdentityProtocol();
         udp.setPrevious(stubPrev);
 
         byte[] reassembled = udp.decapsulate(out.toByteArray());
@@ -174,5 +165,49 @@ public class UDPTest {
         System.arraycopy(part1, 0, expected, part2.length, part1.length);
 
         assertArrayEquals("payload reassembled in order", expected, reassembled);
+    }
+
+    // —— Tests for extracSource(...) and extractDestination(...) —— //
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extracSourceRejectsNull() {
+        udp.extractSource(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extracSourceRejectsTooShort() {
+        udp.extractSource(new byte[3]);
+    }
+
+    @Test
+    public void extracSourceReturnsCorrectPort() {
+        byte[] data = "DATA".getBytes(StandardCharsets.US_ASCII);
+        UDPSegment seg = new UDPSegment(SRC, DST, 5, data);
+        byte[] raw = seg.toByte();
+
+        Port extracted = udp.extractSource(raw);
+        assertEquals("should extract original source port",
+                     SRC.getPort(), extracted.getPort());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extractDestinationRejectsNull() {
+        udp.extractDestination(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extractDestinationRejectsTooShort() {
+        udp.extractDestination(new byte[3]);
+    }
+
+    @Test
+    public void extractDestinationReturnsCorrectPort() {
+        byte[] data = "DATA".getBytes(StandardCharsets.US_ASCII);
+        UDPSegment seg = new UDPSegment(SRC, DST, 7, data);
+        byte[] raw = seg.toByte();
+
+        Port extracted = udp.extractDestination(raw);
+        assertEquals("should extract original destination port",
+                     DST.getPort(), extracted.getPort());
     }
 }

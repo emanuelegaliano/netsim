@@ -273,4 +273,56 @@ public class IPv4Protocol implements Protocol {
             
             this.previousProtocol = previousProtocol;
       }
+
+      
+      /**
+       * Extracts the source IPv4 address from a single IPv4 packet.
+       *
+       * @param packet a single, complete IPv4 datagram (header + payload)
+       * @return a new IPv4 instance corresponding to the source address
+       * @throws IllegalArgumentException if packet is null or shorter than the minimum header (20 bytes)
+       */
+      public IPv4 extractSource(byte[] packet) throws IllegalArgumentException {
+            if (packet == null || packet.length < 20) {
+                  throw new IllegalArgumentException(
+                  "IPv4Protocol.extractSource: packet must be at least 20 bytes"
+                  );
+            }
+            // Source IP is at bytes 12–15
+            byte[] src = Arrays.copyOfRange(packet, 12, 16);
+            String dotted = String.format(
+                  "%d.%d.%d.%d",
+                  src[0] & 0xFF,
+                  src[1] & 0xFF,
+                  src[2] & 0xFF,
+                  src[3] & 0xFF
+            );
+            return new IPv4(dotted, 0);
+      }
+
+      /**
+       * Extracts the destination IPv4 address from a single IPv4 packet.
+       *
+       * @param packet a single, complete IPv4 datagram (header + payload)
+       * @return a new IPv4 instance corresponding to the destination address
+       * @throws IllegalArgumentException if packet is null or shorter than the minimum header (20 bytes)
+       */
+      public IPv4 extractDestination(byte[] packet) throws IllegalArgumentException {
+            if (packet == null || packet.length < 20) {
+                  throw new IllegalArgumentException(
+                  "IPv4Protocol.extractDestination: packet must be at least 20 bytes"
+                  );
+            }
+            // Destination IP is at bytes 16–19
+            byte[] dst = Arrays.copyOfRange(packet, 16, 20);
+            String dotted = String.format(
+                  "%d.%d.%d.%d",
+                  dst[0] & 0xFF,
+                  dst[1] & 0xFF,
+                  dst[2] & 0xFF,
+                  dst[3] & 0xFF
+            );
+            return new IPv4(dotted, 0);
+      }
+
 }

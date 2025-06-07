@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import com.netsim.networkstack.Protocol;
+import com.netsim.addresses.Address;
 
 /**
  * Simplified version HTTP 1/0
@@ -104,5 +105,19 @@ public class HTTP implements Protocol {
             throw new NullPointerException("HTTP: previous protocol cannot be null");
         
         this.previousProtocol = previousProtocol;
+    }
+
+    /**
+     * In HTTP There's no source
+     */
+    public Address extractSource(byte[] pdu) {
+        return null;
+    }
+
+    /**
+     * In HTTP There's no destination
+     */
+    public Address extractDestination(byte[] pdu) {
+        return null;
     }
 }

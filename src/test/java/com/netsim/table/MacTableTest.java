@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.netsim.addresses.Mac;
-import com.netsim.node.NetworkAdapter;
+import com.netsim.networkstack.NetworkAdapter;
 
 public class MacTableTest {
     private MacTable macTable;

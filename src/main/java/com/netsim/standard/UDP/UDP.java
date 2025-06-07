@@ -207,5 +207,34 @@ public class UDP implements Protocol {
                     throw new NullPointerException("UDP: previous protocol cannot be null");
                 
                 this.previousProtocol = previousProtocol;
-        }     
+        }  
+        /**
+         * Extracts the source port from a single UDP segment byte array.
+         *
+         * @param segment a raw byte array containing one complete UDPSegment (header + payload)
+         * @return a Port representing the source port
+         * @throws IllegalArgumentException if segment is null or shorter than 4 bytes
+         */
+        public Port extractSource(byte[] segment) {
+            if(segment == null || segment.length < 4)
+                throw new IllegalArgumentException("UDP: segment too short to extract source port");
+
+            int srcPortVal = ((segment[0] & 0xFF) << 8) | (segment[1] & 0xFF);
+            return new Port(String.valueOf(srcPortVal));
+        }
+
+        /**
+         * Extracts the destination port from a single UDP segment byte array.
+         *
+         * @param segment a raw byte array containing one complete UDPSegment (header + payload)
+         * @return a Port representing the destination port
+         * @throws IllegalArgumentException if segment is null or shorter than 4 bytes
+         */
+        public Port extractDestination(byte[] segment) {
+            if(segment == null || segment.length < 4)
+                throw new IllegalArgumentException("UDP: segment too short to extract destination port");
+
+            int dstPortVal = ((segment[2] & 0xFF) << 8) | (segment[3] & 0xFF);
+            return new Port(String.valueOf(dstPortVal));
+        }
 }

@@ -8,7 +8,7 @@ import org.junit.Test;
 import com.netsim.addresses.IP;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
-import com.netsim.node.NetworkAdapter;
+import com.netsim.networkstack.NetworkAdapter;
 
 public class RoutingTableTest {
     private RoutingTable routingTable;

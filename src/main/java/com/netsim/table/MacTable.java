@@ -3,8 +3,7 @@ package com.netsim.table;
 import java.util.HashMap;
 
 import com.netsim.addresses.Mac;
-
-import com.netsim.node.NetworkAdapter;
+import com.netsim.networkstack.NetworkAdapter;
 
 public class MacTable implements NetworkTable<Mac, NetworkAdapter> {
       private HashMap<Mac, NetworkAdapter> table;

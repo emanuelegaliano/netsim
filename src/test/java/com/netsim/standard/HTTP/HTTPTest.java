@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.netsim.networkstack.Protocol;
+import com.netsim.addresses.Address;
 
 public class HTTPTest {
       private HTTP http;
@@ -40,18 +41,21 @@ public class HTTPTest {
       public void encapsulateBuildsHTTPRequestAndPassesToNext() {
             // stub next protocol
             Protocol stubNext = new Protocol() {
-                  @Override
                   public byte[] encapsulate(byte[] pdu) {
                         return pdu;  // echo back
                   }
-                  @Override
                   public byte[] decapsulate(byte[] pdu) {
                         return pdu;
                   }
-                  @Override
                   public void setNext(Protocol next) {}
-                  @Override
                   public void setPrevious(Protocol previous) {}
+
+                  public Address extractSource(byte[] pdu) {
+                        return null;
+                  }
+                  public Address extractDestination(byte[] pdu) {
+                        return null;
+                  }
             };
             // use setter to define nextProtocolDefined
             http.setNext(stubNext);
@@ -113,10 +117,16 @@ public class HTTPTest {
 
       // Stub previous protocol to echo back whatever it gets
       Protocol stubPrev = new Protocol() {
-            @Override public byte[] encapsulate(byte[] pdu)   { return pdu; }
-            @Override public byte[] decapsulate(byte[] pdu) { return pdu; }
-            @Override public void setNext(Protocol next)    {}
-            @Override public void setPrevious(Protocol prev){}
+            public byte[] encapsulate(byte[] pdu) { return pdu; }
+            public byte[] decapsulate(byte[] pdu) { return pdu; }
+            public void setNext(Protocol next) {}
+            public void setPrevious(Protocol prev) {}
+            public Address extractSource(byte[] pdu) {
+                  return null;
+            }
+            public Address extractDestination(byte[] pdu) {
+                  return null;
+            }
       };
       http.setPrevious(stubPrev);
 

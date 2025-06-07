@@ -83,8 +83,32 @@ public class Mac extends Address {
 
         return sb.toString();
     }
+    
 
     public static Mac broadcast() {
         return new Mac("FF:FF:FF:FF:FF:FF");
+    }
+
+    /**
+     * Converts a 6‐byte array into the usual “xx:xx:xx:xx:xx:xx” format
+     * so that we can pass it into the Mac(String) constructor.
+     * @param sixBytes the bytes of mac
+     * @return a new mac address string
+     * @throws IllegalArgumentException if either sixBytes is null or its length is 0
+     */
+    public static Mac bytesToMac(byte[] sixBytes) throws IllegalArgumentException {
+        if(sixBytes == null || sixBytes.length != 6) 
+                throw new IllegalArgumentException(
+                "SimpleDLLProtocol.bytesToMac: must pass exactly 6 bytes"
+                );
+
+        StringBuilder sb = new StringBuilder(17);
+        for (int i = 0; i < 6; i++) {
+                sb.append(String.format("%02x", sixBytes[i] & 0xFF));
+                if (i < 5) {
+                sb.append(':');
+                }
+        }
+        return new Mac(sb.toString());
     }
 }

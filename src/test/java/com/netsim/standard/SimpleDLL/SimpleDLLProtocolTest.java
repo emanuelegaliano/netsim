@@ -2,26 +2,47 @@ package com.netsim.standard.SimpleDLL;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayOutputStream;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.netsim.addresses.Mac;
 import com.netsim.networkstack.IdentityProtocol;
+
 /**
- * Unit tests for SimpleDLLProtocol, using the built‐in IdentityProtocol.
+ * Unit tests for SimpleDLLProtocol, now working over IPv4 packets
+ * (header + payload), wrapping each packet in a 12-byte MAC header.
  */
 public class SimpleDLLProtocolTest {
     private Mac srcMac;
     private Mac dstMac;
-    private byte[] payload;
+    private byte[] ipPayload;
     private SimpleDLLProtocol dllProto;
 
     @Before
     public void setUp() {
-        srcMac = new Mac("aa:bb:cc:00:11:22");
-        dstMac = new Mac("11:22:33:44:55:66");
-        payload = new byte[] { 0x10, 0x20, 0x30 };
-        dllProto = new SimpleDLLProtocol(srcMac, dstMac);
+        srcMac    = new Mac("aa:bb:cc:00:11:22");
+        dstMac    = new Mac("11:22:33:44:55:66");
+        ipPayload = new byte[] { 0x10, 0x20, 0x30 };
+        dllProto  = new SimpleDLLProtocol(srcMac, dstMac);
+    }
+
+    /**
+     * Helper: builds a minimal IPv4 packet (no options) with the given payload.
+     */
+    private byte[] makeFakeIpPacket(byte[] payload) {
+        int headerLen  = 5 * 4; // IHL=5 → 20 bytes
+        int totalLen   = headerLen + payload.length;
+        byte[] pkt     = new byte[totalLen];
+        // Byte 0: version=4 (high nibble), IHL=5 (low nibble)
+        pkt[0] = (byte) ((4 << 4) | 5);
+        // Bytes 2–3: total length
+        pkt[2] = (byte) ((totalLen >> 8) & 0xFF);
+        pkt[3] = (byte) ( totalLen       & 0xFF);
+        // leave other header fields =0
+        // copy payload after header
+        System.arraycopy(payload, 0, pkt, headerLen, payload.length);
+        return pkt;
     }
 
     // —— Constructor tests —— //
@@ -36,50 +57,61 @@ public class SimpleDLLProtocolTest {
         new SimpleDLLProtocol(srcMac, null);
     }
 
+    // —— setNext / setPrevious tests —— //
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setNextRejectsNull() {
+        dllProto.setNext(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setPreviousRejectsNull() {
+        dllProto.setPrevious(null);
+    }
+
     // —— encapsulate(...) tests —— //
 
     @Test(expected = IllegalArgumentException.class)
-    public void encapsulateRejectsNullPayload() {
-        // set a valid next so that exception is from payload check
+    public void encapsulateRejectsNullInput() {
         dllProto.setNext(new IdentityProtocol());
         dllProto.encapsulate(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void encapsulateRejectsEmptyPayload() {
+    public void encapsulateRejectsEmptyInput() {
         dllProto.setNext(new IdentityProtocol());
         dllProto.encapsulate(new byte[0]);
     }
 
     @Test(expected = NullPointerException.class)
     public void encapsulateRequiresNextProtocol() {
-        dllProto.encapsulate(payload);
+        byte[] ipPkt = makeFakeIpPacket(ipPayload);
+        dllProto.encapsulate(ipPkt);
     }
 
     @Test
-    public void encapsulateProducesFrameAndForwardsToNext() {
-        // Use IdentityProtocol as next: it will return exactly the frame bytes
+    public void encapsulateWrapsSingleIpPacket() {
         IdentityProtocol identityNext = new IdentityProtocol();
         dllProto.setNext(identityNext);
 
-        byte[] result = dllProto.encapsulate(payload);
+        byte[] ipPkt    = makeFakeIpPacket(ipPayload);
+        byte[] wire     = dllProto.encapsulate(ipPkt);
 
-        // With identity next, result should be exactly header || payload
-        assertEquals(12 + payload.length, result.length);
+        // expect exactly one frame: 12-byte DLL header + ipPkt
+        assertEquals(12 + ipPkt.length, wire.length);
 
-        // Check header: first 6 bytes == dstMac, next 6 == srcMac
-        byte[] expectedDst = dstMac.byteRepresentation();
-        byte[] expectedSrc = srcMac.byteRepresentation();
-        for (int i = 0; i < 6; i++) {
-            assertEquals(expectedDst[i], result[i]);
-        }
-        for (int i = 0; i < 6; i++) {
-            assertEquals(expectedSrc[i], result[6 + i]);
-        }
-        // Check payload portion
-        for (int i = 0; i < payload.length; i++) {
-            assertEquals(payload[i], result[12 + i]);
-        }
+        // DLL header: [dstMAC (6)] [srcMAC (6)]
+        byte[] gotDst = new byte[6], gotSrc = new byte[6];
+        System.arraycopy(wire, 0,      gotDst, 0, 6);
+        System.arraycopy(wire, 6,      gotSrc, 0, 6);
+        assertArrayEquals(dstMac.byteRepresentation(), gotDst);
+        assertArrayEquals(srcMac.byteRepresentation(), gotSrc);
+
+        // then the IP packet unchanged
+        byte[] gotIp = new byte[ipPkt.length];
+        System.arraycopy(wire, 12, gotIp, 0, ipPkt.length);
+        assertArrayEquals(ipPkt, gotIp);
     }
 
     // —— decapsulate(...) tests —— //
@@ -98,32 +130,29 @@ public class SimpleDLLProtocolTest {
 
     @Test(expected = NullPointerException.class)
     public void decapsulateRequiresPreviousProtocol() {
-        // Construct a valid frame: header (12 bytes) + payload
-        byte[] frame = new byte[12 + payload.length];
+        byte[] frame = new byte[12 + ipPayload.length];
         dllProto.decapsulate(frame);
     }
 
     @Test
-    public void decapsulateStripsHeaderAndForwardsToPrevious() {
-        // Build a frame: [dst(6)] [src(6)] [payload]
-        byte[] frame = new byte[12 + payload.length];
-        byte[] dstBytes = dstMac.byteRepresentation();
-        byte[] srcBytes = srcMac.byteRepresentation();
-        System.arraycopy(dstBytes, 0, frame, 0, 6);
-        System.arraycopy(srcBytes, 0, frame, 6, 6);
-        System.arraycopy(payload, 0, frame, 12, payload.length);
+    public void decapsulateUnwrapsSingleFrame() {
+        // Build a valid single frame
+        byte[] ipPkt = makeFakeIpPacket(ipPayload);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(dstMac.byteRepresentation(), 0, 6);
+        out.write(srcMac.byteRepresentation(), 0, 6);
+        out.write(ipPkt, 0, ipPkt.length);
+        byte[] frame = out.toByteArray();
 
-        // Use IdentityProtocol as previous: it returns exactly the stripped payload
         IdentityProtocol identityPrev = new IdentityProtocol();
         dllProto.setPrevious(identityPrev);
 
-        byte[] result = dllProto.decapsulate(frame);
-
-        // result should equal payload
-        assertArrayEquals(payload, result);
+        byte[] recoveredIp = dllProto.decapsulate(frame);
+        assertArrayEquals("should strip DLL header and return original IP packet",
+                          ipPkt, recoveredIp);
     }
 
-    // —— Round‐trip test —— //
+    // —— Round-trip test —— //
 
     @Test
     public void roundTripEncapsulateThenDecapsulate() {
@@ -131,8 +160,11 @@ public class SimpleDLLProtocolTest {
         dllProto.setNext(identity);
         dllProto.setPrevious(identity);
 
-        byte[] wire = dllProto.encapsulate(payload);
+        byte[] ipPkt     = makeFakeIpPacket(ipPayload);
+        byte[] wire      = dllProto.encapsulate(ipPkt);
         byte[] recovered = dllProto.decapsulate(wire);
-        assertArrayEquals("Round‐trip should recover original payload", payload, recovered);
+
+        assertArrayEquals("round-trip should recover original IP packet",
+                          ipPkt, recovered);
     }
 }

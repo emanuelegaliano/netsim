@@ -247,87 +247,73 @@ public class IPv4ProtocolTest {
     public void decapsulateRequiresPreviousProtocol() {
         IPv4Protocol ip = new IPv4Protocol(SRC, DST, 5, 0, 0, 0, 64, 17, 100);
         // previousProtocol not set → RuntimeException
-        byte[] dummy = new byte[20];
+        byte[] dummy = new byte[20 + 1];
         ip.decapsulate(dummy);
     }
 
     @Test
     public void decapsulateReassemblesSinglePacket() {
-        // Create a protocol that simply returns the payload (IdentityProtocol) at both ends
-        int IHL = 5;              
-        int typeOfService = 0;
-        int identification = 0x2222;
-        int flags = 0;
-        int ttl = 50;
-        int protocol = 6;         // TCP
-        int MTU = 100;            // headerLen=20 → maxData=80
-
-        IPv4Protocol ip = new IPv4Protocol(
-            SRC, DST,
-            IHL,
-            typeOfService,
-            identification,
-            flags,
-            ttl,
-            protocol,
-            MTU
-        );
-        // Encapsulate with next=Identity, then Decapsulate with previous=Identity
+        IPv4Protocol ip = new IPv4Protocol(SRC, DST, 5, 0, 0, 0, 64, 17, 100);
         ip.setNext(new IdentityProtocol());
         ip.setPrevious(new IdentityProtocol());
 
-        // Build a payload of length 60
         byte[] payload = new byte[60];
         for (int i = 0; i < payload.length; i++) {
             payload[i] = (byte) (i * 2);
         }
 
-        // First, encapsulate → gives a single IPv4 packet (header+payload)
         byte[] wire = ip.encapsulate(payload);
-
-        // Then, decapsulate the wire‐format back to raw payload
         byte[] reassembled = ip.decapsulate(wire);
 
-        assertArrayEquals("Single‐packet payload must match after decapsulation",
-                          payload, reassembled);
+        assertArrayEquals("Single-packet payload must match after decapsulation",
+                        payload, reassembled);
     }
 
     @Test
     public void decapsulateReassemblesMultipleFragments() {
-        int IHL = 5;              // headerLen=20
-        int typeOfService = 0;
-        int identification = 0x3333;
-        int flags = 0;            // DF=0
-        int ttl = 32;
-        int protocol = 17;        // UDP
-        int MTU = 30;             // headerLen=20 → maxData=10, but use multiples of 8
-
-        IPv4Protocol ip = new IPv4Protocol(
-            SRC, DST,
-            IHL,
-            typeOfService,
-            identification,
-            flags,
-            ttl,
-            protocol,
-            MTU
-        );
+        IPv4Protocol ip = new IPv4Protocol(SRC, DST, 5, 0, 0, 0, 64, 17, 30);
         ip.setNext(new IdentityProtocol());
         ip.setPrevious(new IdentityProtocol());
 
-        // Payload of length 25 → will fragment into 8,8,9
         byte[] payload = new byte[25];
         for (int i = 0; i < payload.length; i++) {
             payload[i] = (byte) (100 + i);
         }
 
-        // Encapsulate → get concatenated fragments
         byte[] allFragments = ip.encapsulate(payload);
-
-        // Now decapsulate → should reconstruct original 25‐byte payload
         byte[] reassembled = ip.decapsulate(allFragments);
 
         assertArrayEquals("Reassembled payload must match original",
-                          payload, reassembled);
+                        payload, reassembled);
+    }
+
+    // ---------- Tests for extractSource / extractDestination ----------
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extractSourceRejectsNull() {
+        new IPv4Protocol(SRC, DST, 5, 0, 0, 0, 64, 17, 100)
+            .extractSource(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extractDestinationRejectsTooShort() {
+        new IPv4Protocol(SRC, DST, 5, 0, 0, 0, 64, 17, 100)
+            .extractDestination(new byte[19]);
+    }
+
+    @Test
+    public void extractSourceAndDestinationReturnCorrectAddresses() {
+        IPv4Protocol ip = new IPv4Protocol(SRC, DST, 5, 0, 0, 0, 64, 17, 100);
+        ip.setNext(new IdentityProtocol());
+        ip.setPrevious(new IdentityProtocol());
+
+        byte[] payload = new byte[]{0x01,0x02,0x03,0x04};
+        byte[] packet = ip.encapsulate(payload);
+
+        IPv4 extractedSrc = ip.extractSource(packet);
+        IPv4 extractedDst = ip.extractDestination(packet);
+
+        assertEquals("Source must match", SRC.stringRepresentation(), extractedSrc.stringRepresentation());
+        assertEquals("Destination must match", DST.stringRepresentation(), extractedDst.stringRepresentation());
     }
 }
