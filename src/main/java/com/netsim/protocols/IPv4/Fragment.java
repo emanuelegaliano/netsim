@@ -1,4 +1,4 @@
-package com.netsim.standard.IPv4;
+package com.netsim.protocols.IPv4;
 
 /**
  * helper class for IPv4 decapsulation

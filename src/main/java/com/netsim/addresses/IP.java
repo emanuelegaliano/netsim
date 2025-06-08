@@ -131,4 +131,6 @@ public abstract class IP extends Address {
     public abstract boolean isPrivate();
     public abstract boolean isLinkLocal();
     public abstract boolean isUnspecified();
+    /** @return true if all the host bits are zero, false otherwise */
+    public abstract boolean isSubnet();
 }

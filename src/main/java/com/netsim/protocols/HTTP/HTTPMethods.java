@@ -1,4 +1,4 @@
-package com.netsim.standard.HTTP;
+package com.netsim.protocols.HTTP;
 
 public enum HTTPMethods {
     GET,

@@ -1,4 +1,4 @@
-package com.netsim.standard.IPv4;
+package com.netsim.protocols.IPv4;
 
 import static org.junit.Assert.*;
 
@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Port;
-import com.netsim.standard.UDP.UDPSegment;
+import com.netsim.protocols.UDP.UDPSegment;
 
 public class IPv4PacketTest {
         private static final IPv4 SRC = new IPv4("192.168.0.1", 24);

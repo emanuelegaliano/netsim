@@ -6,11 +6,12 @@ import java.nio.charset.StandardCharsets;
 
 import com.netsim.addresses.Port;
 import com.netsim.networkstack.IdentityProtocol;
-import com.netsim.standard.HTTP.HTTP;
-import com.netsim.standard.HTTP.HTTPMethods;
-import com.netsim.standard.IPv4.IPv4Protocol;
-import com.netsim.standard.SimpleDLL.SimpleDLLProtocol;
-import com.netsim.standard.UDP.UDP;
+import com.netsim.networkstack.NetworkAdapter;
+import com.netsim.protocols.HTTP.HTTP;
+import com.netsim.protocols.HTTP.HTTPMethods;
+import com.netsim.protocols.IPv4.IPv4Protocol;
+import com.netsim.protocols.SimpleDLL.SimpleDLLProtocol;
+import com.netsim.protocols.UDP.UDP;
 import com.netsim.addresses.*;
 
 public class Main {
@@ -26,12 +27,24 @@ public class Main {
             0, 
             64,
             17, 
-            1500);
+            30);
         SimpleDLLProtocol dll = new SimpleDLLProtocol(
-            new Mac("AA:BB:CC:DD:FF:EE"), 
-            new Mac("AA:BB:CC:EE:FF:DD")
+            new Mac("AA:BB:CC:DD:EE:11"), 
+            new Mac("AA:BB:CC:DD:EE:22")
         );
         IdentityProtocol identity = new IdentityProtocol();
+
+        NetworkAdapter sender = new NetworkAdapter(
+            "A", 
+            1500, 
+            new Mac("AA:BB:CC:DD:EE:11")
+        );
+
+        NetworkAdapter receiver = new NetworkAdapter(
+            "B", 
+            1500, 
+            new Mac("AA:BB:CC:DD:EE:22")
+        );
 
         http.setNext(udp);
         udp.setNext(ipv4);
@@ -50,8 +63,16 @@ public class Main {
         byte[] wire = http.encapsulate(appPayload);
         System.out.println("Wire-format length: " + wire.length + " bytes");
 
-        byte[] rawHttp = dll.decapsulate(wire);
+        sender.collectFrames(wire);
+        sender.sendFrames(receiver);
+        byte[] received = receiver.releaseFrames();
+
+        byte[] rawHttp = dll.decapsulate(received);
         String httpText = new String(rawHttp, StandardCharsets.US_ASCII);
         System.out.println("\nReassembled HTTP request:\n" + httpText);
+
+        Integer a = 1;
+
+        System.out.println(a.getClass().getSimpleName());
     }
 }

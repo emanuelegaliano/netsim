@@ -1,4 +1,4 @@
-package com.netsim.standard.HTTP;
+package com.netsim.protocols.HTTP;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

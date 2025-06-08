@@ -1,4 +1,4 @@
-package com.netsim.standard.HTTP;
+package com.netsim.protocols.HTTP;
 
 import com.netsim.networkstack.PDU;
 import java.nio.charset.StandardCharsets;

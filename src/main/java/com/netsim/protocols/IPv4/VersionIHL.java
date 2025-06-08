@@ -1,4 +1,4 @@
-package com.netsim.standard.IPv4;
+package com.netsim.protocols.IPv4;
 
 /**
  * Class for having 4 bit Version and 4 bit IP header length 

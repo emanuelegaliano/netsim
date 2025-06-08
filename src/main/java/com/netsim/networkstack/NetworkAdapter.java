@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.netsim.addresses.Mac;
-
 public class NetworkAdapter {
       private final String name;
       private final int MTU;
@@ -175,13 +174,18 @@ public class NetworkAdapter {
        * @throws IllegalArgumentException if either frame is null or is empty
        * @throws RuntimeException if adapter is down
        */
-      public void receiveFrame(byte[] frame) throws IllegalArgumentException, RuntimeException {
-            if(frame == null || frame.length == 0)
-                  throw new IllegalArgumentException("NetworkAdapter: frame must be not null and not empty");
-            if(!this.isUp)
-                  throw new RuntimeException("NetworkAdapter: adapter is down");
-            
-            this.inGoingFrames.add(frame);
+      public void receiveFrame(byte[] frame) {
+      if (frame == null || frame.length < 12) 
+            throw new IllegalArgumentException("…frame too short…");
+
+      // extract destination MAC = bytes 0–5
+      Mac dst = Mac.bytesToMac(Arrays.copyOfRange(frame, 0, 6));
+      if(!dst.equals(this.macAddress) && ! this.promiscuousMode) {
+            throw new IllegalArgumentException(
+            "NetworkAdapter: frame not addressed to me ("+ this.macAddress +")"
+            );
+      }
+      inGoingFrames.add(frame);
       }
 
       /**

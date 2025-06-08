@@ -1,4 +1,4 @@
-package com.netsim.standard.HTTP;
+package com.netsim.protocols.HTTP;
 
 import static org.junit.Assert.*;
 

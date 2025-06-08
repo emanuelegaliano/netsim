@@ -1,5 +1,5 @@
 // src/main/java/com/netsim/standard/SimpleDLL/SimpleDLLFrame.java
-package com.netsim.standard.SimpleDLL;
+package com.netsim.protocols.SimpleDLL;
 
 import com.netsim.networkstack.PDU;
 import com.netsim.addresses.Mac;

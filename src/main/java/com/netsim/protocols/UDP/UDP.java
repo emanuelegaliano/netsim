@@ -1,4 +1,4 @@
-package com.netsim.standard.UDP;
+package com.netsim.protocols.UDP;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

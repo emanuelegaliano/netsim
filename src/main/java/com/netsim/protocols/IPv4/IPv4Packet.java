@@ -1,4 +1,4 @@
-package com.netsim.standard.IPv4;
+package com.netsim.protocols.IPv4;
 
 import java.nio.ByteBuffer;
 

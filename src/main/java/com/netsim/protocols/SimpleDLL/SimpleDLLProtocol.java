@@ -1,4 +1,4 @@
-package com.netsim.standard.SimpleDLL;
+package com.netsim.protocols.SimpleDLL;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -134,19 +134,7 @@ public class SimpleDLLProtocol implements Protocol {
             this.previousProtocol = previousProtocol;
       }
 
-      /**
-       * extracts the first 6 bytes of source mac from frame
-       * @param frame a byte[] raw array of SimpleDLLFrame
-       * @return the mac address of source
-       * @throws IllegalArgumentException if either frame is null or have length < 6
-       */
-      public Mac extractSource(byte[] frame) throws IllegalArgumentException {
-            if(frame == null || frame.length < 6) 
-                  throw new IllegalArgumentException("");
-            
-                  byte[] dstBytes = Arrays.copyOfRange(frame, 0, 6);
-            return Mac.bytesToMac(dstBytes);
-      }
+
 
       /**
        * extracts the bytes from 6 to 12 of destination mac
@@ -154,11 +142,23 @@ public class SimpleDLLProtocol implements Protocol {
        * @return the mac address of destination
        * @throws IllegalArgumentException if either frame is null or have length < 12
        */
-      public Mac extractDestination(byte[] frame) throws IllegalArgumentException {
+      public Mac extractSource(byte[] frame) {
             if(frame == null || frame.length < 12)
-                  throw new IllegalArgumentException("Frame troppo corto per estrarre il MAC di sorgente");
+                  throw new IllegalArgumentException("SimpleDLLProtocol: frame too short for source MAC");
             
-            byte[] srcBytes = Arrays.copyOfRange(frame, 6, 12);
-            return Mac.bytesToMac(srcBytes);
+            return Mac.bytesToMac(Arrays.copyOfRange(frame, 6, 12));
+      }
+
+      /**
+       * extracts the first 6 bytes of source mac from frame
+       * @param frame a byte[] raw array of SimpleDLLFrame
+       * @return the mac address of source
+       * @throws IllegalArgumentException if either frame is null or have length < 6
+       */
+      public Mac extractDestination(byte[] frame) {
+            if(frame == null || frame.length < 6)
+                  throw new IllegalArgumentException("SimpleDLLProtocol: frame too short for destination MAC");
+            
+            return Mac.bytesToMac(Arrays.copyOfRange(frame, 0, 6));
       }
 }

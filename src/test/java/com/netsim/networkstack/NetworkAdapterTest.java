@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.netsim.addresses.Mac;
+import com.netsim.protocols.SimpleDLL.SimpleDLLFrame;
 
 public class NetworkAdapterTest {
     private static final String NAME = "eth0";
@@ -21,7 +22,7 @@ public class NetworkAdapterTest {
     public void setUp() {
         adapter = new NetworkAdapter(NAME, MTU, MAC);
         // give the peer the same MAC so receives will pass
-        other   = new NetworkAdapter("eth1", MTU, MAC);
+        other = new NetworkAdapter("eth1", MTU, MAC);
     }
 
     // -- constructor / getters --
@@ -39,8 +40,8 @@ public class NetworkAdapterTest {
     @Test
     public void gettersReturnCorrectValues() {
         assertEquals(NAME, adapter.getName());
-        assertEquals(MTU,  adapter.getMTU());
-        assertSame(MAC,    adapter.getMacAddress());
+        assertEquals(MTU, adapter.getMTU());
+        assertSame(MAC, adapter.getMacAddress());
         // default flags
         assertTrue(adapter.isUp());
         assertFalse(adapter.promiscuousMode());
@@ -91,23 +92,26 @@ public class NetworkAdapterTest {
 
     @Test
     public void receiveAndReleaseFrames() {
-        byte[] f1 = {0x01,0x02};
-        byte[] f2 = {0x03,0x04,0x05};
+        byte[] payload = {0x01, 0x02};
+        byte[] f1 = new SimpleDLLFrame(MAC, MAC, payload).toByte();
+        byte[] f2 = new SimpleDLLFrame(MAC, MAC, payload).toByte();
+        
+        // push them in via receiveFrame, which has no 12+20 check
         adapter.receiveFrame(f1);
         adapter.receiveFrame(f2);
 
         byte[] all = adapter.releaseFrames();
-        // should be concatenation f1||f2
         byte[] expect = new byte[f1.length + f2.length];
-        System.arraycopy(f1,0,expect,0,f1.length);
-        System.arraycopy(f2,0,expect,f1.length,f2.length);
-        assertArrayEquals(expect, all);
+        System.arraycopy(f1, 0, expect, 0, f1.length);
+        System.arraycopy(f2, 0, expect, f1.length, f2.length);
 
-        // buffer now cleared
+        assertArrayEquals("should concat f1||f2", expect, all);
+
+        // now the buffer is empty, so the next call must throw
         try {
             adapter.releaseFrames();
-            fail("releaseFrames should throw once emptied");
-        } catch(RuntimeException e) { /* ok */ }
+            fail("releaseFrames should throw when empty");
+        } catch (RuntimeException ok) { }
     }
 
     // -- collectFrames / sendFrames integration --

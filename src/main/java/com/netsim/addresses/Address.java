@@ -96,7 +96,7 @@ public abstract class Address {
 
         Address other = (Address)obj;
 
-        return this.byteRepresentation() == other.byteRepresentation();
+        return Arrays.equals(this.byteRepresentation(), other.byteRepresentation());
     }
 
     @Override

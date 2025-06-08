@@ -106,4 +106,23 @@ public class IPv4 extends IP {
         }
         return true;
     }
+
+    public boolean isSubnet() throws IllegalArgumentException {
+        int prefix = this.mask.getPrefix(); // es. 24
+        if (prefix < 0 || prefix > 32)
+            throw new IllegalStateException("Invalid mask prefix: " + prefix);
+
+        // costruisce la maschera in byte
+        byte[] maskBytes = new Mask(prefix, 4).byteRepresentation();
+        byte[] addrBytes = this.byteRepresentation();
+
+        // verifica che addrBytes & ~maskBytes == 0 in tutti gli ottetti
+        for(int i = 0; i < 4; i++) {
+            int hostBits = addrBytes[i] & (~maskBytes[i]);
+            if (hostBits != 0)
+                return false;
+        }
+
+        return true;
+    }
 }
