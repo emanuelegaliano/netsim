@@ -5,8 +5,9 @@ package com.netsim.client;
 import java.nio.charset.StandardCharsets;
 
 import com.netsim.addresses.Port;
-import com.netsim.networkstack.IdentityProtocol;
 import com.netsim.networkstack.NetworkAdapter;
+import com.netsim.networkstack.ProtocolPipeline;
+import com.netsim.networkstack.ProtocolPipelineBuilder;
 import com.netsim.protocols.HTTP.HTTP;
 import com.netsim.protocols.HTTP.HTTPMethods;
 import com.netsim.protocols.IPv4.IPv4Protocol;
@@ -32,7 +33,14 @@ public class Main {
             new Mac("AA:BB:CC:DD:EE:11"), 
             new Mac("AA:BB:CC:DD:EE:22")
         );
-        IdentityProtocol identity = new IdentityProtocol();
+
+        ProtocolPipeline pipeline = new ProtocolPipelineBuilder().addProtocol(http)
+                                                                 .addProtocol(udp)
+                                                                 .addProtocol(ipv4)
+                                                                 .addProtocol(dll)
+                                                                 .build();
+
+
 
         NetworkAdapter sender = new NetworkAdapter(
             "A", 
@@ -46,33 +54,19 @@ public class Main {
             new Mac("AA:BB:CC:DD:EE:22")
         );
 
-        http.setNext(udp);
-        udp.setNext(ipv4);
-        ipv4.setNext(dll);
-        dll.setNext(identity);
-
-        dll.setPrevious(ipv4);
-        ipv4.setPrevious(udp);
-        udp.setPrevious(http);
-        http.setPrevious(identity);
-
         String message = "Ciao, mi chiamo Manu";
         byte[] appPayload = message.getBytes(StandardCharsets.US_ASCII);
         System.out.println("Original payload length: " + appPayload.length + " bytes");
 
-        byte[] wire = http.encapsulate(appPayload);
+        byte[] wire = pipeline.encapsulate(appPayload);
         System.out.println("Wire-format length: " + wire.length + " bytes");
 
         sender.collectFrames(wire);
         sender.sendFrames(receiver);
         byte[] received = receiver.releaseFrames();
 
-        byte[] rawHttp = dll.decapsulate(received);
+        byte[] rawHttp = pipeline.decapsulate(received);
         String httpText = new String(rawHttp, StandardCharsets.US_ASCII);
         System.out.println("\nReassembled HTTP request:\n" + httpText);
-
-        Integer a = 1;
-
-        System.out.println(a.getClass().getSimpleName());
     }
 }
