@@ -10,12 +10,13 @@ public class NetworkAdapter {
       private final String name;
       private final int MTU;
       private final Mac macAddress;
-
       private boolean isUp;
       private boolean promiscuousMode;
+      private NetworkAdapter other;
 
       private List<byte[]> outGoingFrames;
       private List<byte[]> inGoingFrames;
+
 
       /**
        * @param name the name of the adapter
@@ -33,6 +34,7 @@ public class NetworkAdapter {
             this.name = name;
             this.MTU = MTU;
             this.macAddress = macAddress;
+            this.other = null;
             
             // settings
             this.isUp = true;
@@ -91,8 +93,17 @@ public class NetworkAdapter {
             this.promiscuousMode = false;
       }           
 
+      public void connectTo(NetworkAdapter other) {
+            if(other == null)
+                  throw new IllegalArgumentException("NetworkAdapter: other adapter cannot be null");
+            if(other.getMacAddress().equals(this.macAddress))
+                  throw new IllegalArgumentException("NetworkAdapter: other mac address is equal to adapter mac address");
+
+            this.other = other;
+      }
+
       /**
-       * takes the list of frames from DLL protocol, splits them
+       * Takes the list of frames from protocol chain, splits them
        * and add each of them in outGoingFrames waiting for NetworkAdapter send
        * @param frames 
        * @throws IllegalArgumentException if either frames is null or is empty, 
@@ -195,8 +206,8 @@ public class NetworkAdapter {
        * @throws RuntimeException if adapter is down
        *                          if internal buffer(outGoingFrames) is null
        */
-      public void sendFrames(NetworkAdapter other) throws IllegalArgumentException, RuntimeException {
-            if(other == null)
+      public void sendFrames() throws IllegalArgumentException, RuntimeException {
+            if(this.other == null)
                   throw new IllegalArgumentException("NetworkAdapter: other adapter cannot be null");
             if(!this.isUp)
                   throw new RuntimeException("NetworkAdapter: adapter is down");

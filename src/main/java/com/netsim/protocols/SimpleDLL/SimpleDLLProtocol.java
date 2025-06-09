@@ -14,6 +14,11 @@ public class SimpleDLLProtocol implements Protocol {
       private Protocol nextProtocol;
       private Protocol previousProtocol;
 
+      /**
+       * @param source mac address of source
+       * @param destination mac address of destination
+       * @throws IllegalArgumentException if soruce or destination is null
+       */
       public SimpleDLLProtocol(Mac source, Mac destination) throws IllegalArgumentException {
             if(source == null || destination == null)
                   throw new IllegalArgumentException("SimpleDLLProtocol: source or destination cannot be null");

@@ -7,8 +7,9 @@ public class IPv4 extends IP {
      *
      * @param addressString the IPv4 address (e.g., "192.168.1.1")
      * @param maskString the subnet mask (e.g., "255.255.255.0")
+     * @throws IllegalArgumentException by super constructor
      */
-    public IPv4(String addressString, String maskString) {
+    public IPv4(String addressString, String maskString) throws IllegalArgumentException {
         super(addressString, maskString, 4);
     }
 
@@ -17,8 +18,9 @@ public class IPv4 extends IP {
      *
      * @param addressString the IPv4 address
      * @param maskPrefix the subnet prefix length (e.g., 24 for 255.255.255.0)
+     * @throws IllegalArgumentException by super constructor
      */
-    public IPv4(String addressString, int maskPrefix) {
+    public IPv4(String addressString, int maskPrefix) throws IllegalArgumentException {
         super(addressString, maskPrefix, 4);
     }
 

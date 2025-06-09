@@ -7,6 +7,7 @@ public interface Command {
        * This method makes the Command able to execute 
        * command using NetworkNode methods and attributes.
        * @param node the network node
+       * @param args the arguments of the Command
        */
       void execute(NetworkNode node, String[] args);
       /**

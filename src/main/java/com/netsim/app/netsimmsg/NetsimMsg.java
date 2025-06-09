@@ -7,33 +7,43 @@ import com.netsim.app.App;
 import com.netsim.app.Command;
 
 import com.netsim.node.NetworkNode;
+import com.netsim.addresses.IP;;
 
 public class NetsimMsg extends App {
       private String username;
       private final NetworkNode node;
+      private IP serverIP;
       private Scanner input;
 
       public NetsimMsg(NetworkNode node) throws IllegalArgumentException {
             super(
                   "Netsim-msg", 
-                  "netsim-msg <command> <parameters> ('Netsim-msg help' for more)"
+                  "netsim-msg <command> <parameters> ('help' for more)"
             );
             if(node == null)
                   throw new IllegalArgumentException("NetsimMsg: node cannot be null");
             
             this.node = node;
             this.input = new Scanner(System.in);
+            this.serverIP = null;
       }
 
+      /** first method called on start() in order to set username */
       private void askUsername() {
             System.out.print("Tell me your username: ");
             this.username = this.input.nextLine();
       }
 
+      /** prints to sout the usage of the class*/
       private void printUsage() {
             System.out.println("Usage: " + this.usage);
       }
 
+      /**
+       * Starts the apps in a while, waiting for commands
+       * that be created through factory method and executed on 
+       * the node
+       */
       public void start() {   
             this.askUsername();
             System.out.println(

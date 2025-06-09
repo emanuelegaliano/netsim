@@ -6,13 +6,16 @@ import com.netsim.node.NetworkNode;
 
 public class Help implements Command {
       String[] commands = {"help", "send"};
-
+      
+      /**
+       * Print a list of all the commands in NetsimMsg App
+       */
       public void execute(NetworkNode node, String[] args) {
             String commandList = "Command list: \n";
             
             for(String command : commands) {
                   try {
-                        commandList += command + ": " +NetsimMsgCommandFactory.get(command).help() + "\n";
+                        commandList += NetsimMsgCommandFactory.get(command).help() + "\n";
                   } catch(final IllegalArgumentException e) {
                         continue;
                   }
@@ -22,6 +25,6 @@ public class Help implements Command {
       }
 
       public String help() {
-            return "shows this list";
+            return "help: shows this list";
       }
 }

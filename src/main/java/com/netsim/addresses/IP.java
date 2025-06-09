@@ -16,8 +16,9 @@ public abstract class IP extends Address {
      * @param addressString the IP address in string format (e.g., "192.168.0.1")
      * @param bytes number of bytes for the address (4 for IPv4, 16 for IPv6)
      * @param prefix the subnet prefix length
+     * @throws IllegalArgumentException by super constructor
      */
-    protected IP(String addressString, int prefix, int bytes) {
+    protected IP(String addressString, int prefix, int bytes) throws IllegalArgumentException {
         super(addressString, bytes);
         this.mask = new Mask(prefix, bytes);
     }
@@ -28,8 +29,9 @@ public abstract class IP extends Address {
      * @param addressString the IP address
      * @param maskString the subnet mask
      * @param bytes number of bytes in the address
+     * @throws IllegalArgumentException by super constructor
      */
-    protected IP(String addressString, String maskString, int bytes) {
+    protected IP(String addressString, String maskString, int bytes) throws IllegalArgumentException {
         super(addressString, bytes);
         this.mask = new Mask(maskString, bytes);
     }

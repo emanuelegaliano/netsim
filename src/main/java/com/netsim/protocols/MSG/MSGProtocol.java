@@ -2,9 +2,6 @@ package com.netsim.protocols.MSG;
 
 import com.netsim.networkstack.Protocol;
 import com.netsim.addresses.Address;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -12,104 +9,107 @@ import java.util.Objects;
  * A simple application-level protocol that serializes a payload as
  *   [name][": "][payload]
  * and decapsulates by stripping off the leading name+": " header.
+ * 
+ * Defined in port 9696
  */
 public class MSGProtocol implements Protocol {
-      private final String name;
-      private Protocol nextProtocol;
-      private Protocol previousProtocol;
+    public final static int port = 9696;
+    private final String name;
+    private Protocol nextProtocol;
+    private Protocol previousProtocol;
 
-      /**
-       * @param name the ASCII name to use as header (non-null)
-       * @throws IllegalArgumentException if name is null
-       */
-      public MSGProtocol(String name) throws IllegalArgumentException {
-            if(name == null) 
-                  throw new IllegalArgumentException("MSGProtocol: name cannot be null");
-            this.name = name;
-      }
+    /**
+     * @param name the ASCII name to use as header (non-null)
+     */
+    public MSGProtocol(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("MSGProtocol: name cannot be null");
+        }
+        this.name = name;
+    }
 
-      public byte[] encapsulate(byte[] upperLayerPDU) {
-            if(upperLayerPDU == null || upperLayerPDU.length == 0) 
-                  throw new IllegalArgumentException("MSGProtocol: payload cannot be null or empty");
-            
-            // build name+": "+payload
-            byte[] header = (name + ": ").getBytes(StandardCharsets.UTF_8);
-            ByteArrayOutputStream out = new ByteArrayOutputStream(header.length + upperLayerPDU.length);
-            try {
-                  out.write(header);
-                  out.write(upperLayerPDU);
-            } catch (IOException e) {
-                  // should never happen with ByteArrayOutputStream
-                  throw new RuntimeException(e);
-            }
-            byte[] framed = out.toByteArray();
+    /** encapsulates everything in a MSGHEader and pass it to the next protocol */
+    public byte[] encapsulate(byte[] upperLayerPDU) {
+        if(upperLayerPDU == null || upperLayerPDU.length == 0) 
+            throw new IllegalArgumentException("MSGProtocol: payload cannot be null or empty");
 
-            if (nextProtocol != null) {
-                  return nextProtocol.encapsulate(framed);
-            }
-            return framed;
-      }
+        // Interpret the incoming bytes as UTF-8 text
+        String message = new String(upperLayerPDU, StandardCharsets.UTF_8);
 
-      public byte[] decapsulate(byte[] lowerLayerPDU) {
-            if(lowerLayerPDU == null || lowerLayerPDU.length == 0) 
-                  throw new IllegalArgumentException("MSGProtocol: input cannot be null or empty");
-            if(previousProtocol == null) 
-                  throw new NullPointerException("MSGProtocol: previous protocol is null");
-            
-            // find the ": " after the name
-            String full = new String(lowerLayerPDU, StandardCharsets.UTF_8);
-            String prefix = name + ": ";
-            if (!full.startsWith(prefix)) {
-                  // header mismatch
-                  throw new IllegalArgumentException(
-                  "MSGProtocol: input does not start with \"" + prefix + "\""
-                  );
-            }
-            byte[] payload = full.substring(prefix.length())
-                              .getBytes(StandardCharsets.UTF_8);
-            return previousProtocol.decapsulate(payload);
-      }
+        // Build a PDU and serialize it
+        MSGHeader header = new MSGHeader(name, message);
+        byte[] frame = header.toByte();
 
-      public void setNext(Protocol nextProtocol) {
-            if(nextProtocol == null) 
-                  throw new IllegalArgumentException("MSGProtocol: nextProtocol cannot be null");
-            this.nextProtocol = nextProtocol;
-      }
+        // Pass along the chain (or return if we're at the bottom)
+        if(nextProtocol != null) {
+            return nextProtocol.encapsulate(frame);
+        } else {
+            return frame;
+        }
+    }
 
-      public void setPrevious(Protocol previousProtocol) {
-            if(previousProtocol == null)
-                  throw new IllegalArgumentException("MSGProtocol: previousProtocol cannot be null");
-            this.previousProtocol = previousProtocol;
-      }
+    /** decapsulates previous protocol data removing MSG header */
+    public byte[] decapsulate(byte[] lowerLayerPDU) {
+        if(lowerLayerPDU == null || lowerLayerPDU.length == 0) 
+            throw new IllegalArgumentException("MSGProtocol: input cannot be null or empty");
+        if(previousProtocol == null) 
+            throw new NullPointerException("MSGProtocol: previous protocol is null");
 
-      public Address getSource() {
-            // application layer has no network-level source
-            return null;
-      }
+        // Convert to string to strip off the name+": " prefix
+        String full = new String(lowerLayerPDU, StandardCharsets.UTF_8);
+        String prefix = name + ": ";
+        if(!full.startsWith(prefix)) 
+            throw new IllegalArgumentException(
+                "MSGProtocol: input does not start with \"" + prefix + "\""
+            );
+        
+        String message = full.substring(prefix.length());
 
-      public Address getDestination() {
-            // application layer has no network-level destination
-            return null;
-      }
+        // Back to bytes
+        byte[] payload = message.getBytes(StandardCharsets.UTF_8);
 
-      public Address extractSource(byte[] pdu) {
-            // not applicable at this layer
-            return null;
-      }
+        // And pass it up the stack
+        return previousProtocol.decapsulate(payload);
+    }
 
-      public Address extractDestination(byte[] pdu) {
-            // not applicable at this layer
-            return null;
-      }
+    public void setNext(Protocol nextProtocol) {
+        if(nextProtocol == null) {
+            throw new IllegalArgumentException("MSGProtocol: nextProtocol cannot be null");
+        }
+        this.nextProtocol = nextProtocol;
+    }
 
-      @Override
-      public boolean equals(Object o) {
-            if (!(o instanceof MSGProtocol)) return false;
-            return Objects.equals(name, ((MSGProtocol)o).name);
-      }
+    public void setPrevious(Protocol previousProtocol) {
+        if (previousProtocol == null) {
+            throw new IllegalArgumentException("MSGProtocol: previousProtocol cannot be null");
+        }
+        this.previousProtocol = previousProtocol;
+    }
 
-      @Override
-      public int hashCode() {
-            return Objects.hash(name);
-      }
+    public Address getSource() {
+        return null;  // not meaningful at this layer
+    }
+
+    public Address getDestination() {
+        return null;  // not meaningful at this layer
+    }
+
+    public Address extractSource(byte[] pdu) {
+        return null;  // not applicable
+    }
+
+    public Address extractDestination(byte[] pdu) {
+        return null;  // not applicable
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof MSGProtocol)) return false;
+        return Objects.equals(name, ((MSGProtocol)o).name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
 }

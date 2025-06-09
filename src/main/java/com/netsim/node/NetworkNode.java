@@ -1,17 +1,21 @@
 package com.netsim.node;
 
 import java.util.List;
+import java.util.Random;
 
 import com.netsim.addresses.IP;
+import com.netsim.addresses.Port;
 import com.netsim.networkstack.NetworkAdapter;
+import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
 import com.netsim.utils.Logger;
 
-public class NetworkNode {
+public abstract class NetworkNode {
       protected String name;
       protected List<NetworkAdapter> adapters;
-      protected List<IP> IPs;
+      protected IP ip;
+      protected List<Port> openPorts;
       protected RoutingTable routingTable;      
 
       public String getName() {
@@ -28,19 +32,6 @@ public class NetworkNode {
             }
 
             this.adapters.add(newAdapter);
-      }
-
-
-      public void addIP(IP newIP) throws IllegalArgumentException {
-            if(newIP == null)
-                  throw new IllegalArgumentException(this.getClass().getSimpleName() + ": new IP cannot be null");
-
-            for(final IP ip : this.IPs) {
-                  if(ip.equals(newIP))
-                        throw new IllegalArgumentException(this.getClass().getSimpleName() + ": new IP already a node IP");
-            }
-
-            this.IPs.add(newIP);
       }
 
       /**
@@ -81,5 +72,53 @@ public class NetworkNode {
             } catch(RuntimeException e) {
                   Logger.getInstance().error(e.getLocalizedMessage());
             }
+      }
+
+      /**
+       * Asks routing table to find route using destination
+       * @param destination
+       * @return
+       * @throws IllegalArgumentException
+       */
+      public RoutingInfo getRoute(IP destination) throws IllegalArgumentException {
+            RoutingInfo ri;
+
+            try {
+                  ri = this.routingTable.lookup(destination);
+            } catch(final NullPointerException e) {
+                  Logger.getInstance().info(e.getLocalizedMessage());
+                  throw new RuntimeException(this.getClass().getSimpleName() + ": routing info not found");
+            }
+
+            return ri;
+      }
+
+      public IP getIP() {
+            return this.ip;
+      }
+
+      /** @return minimum value of MTU from list of adapters */
+      public int getMTU() {
+            int minMTU = Integer.MAX_VALUE;
+            for(NetworkAdapter adapter : this.adapters) {
+                  if(adapter.getMTU() < minMTU)
+                        minMTU = adapter.getMTU();
+            }
+
+            return minMTU;
+      }
+
+      /** @return a random port value in range 1024 - 65.535 */
+      public int randomPort() {
+            Random r = new Random();
+            return r.nextInt((Integer.MAX_VALUE - 1024) + 1024);
+      }
+
+      public byte[] send(RoutingInfo route, ProtocolPipeline protocols, byte[] data) {
+            
+      }
+
+      public byte[] receive(RoutingInfo route, ProtocolPipeline protocols, byte[] data) {
+
       }
 }
