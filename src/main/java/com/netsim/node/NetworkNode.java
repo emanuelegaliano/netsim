@@ -8,7 +8,7 @@ import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
 import com.netsim.utils.Logger;
 
-public abstract class NetworkNode {
+public class NetworkNode {
       protected String name;
       protected List<NetworkAdapter> adapters;
       protected List<IP> IPs;
