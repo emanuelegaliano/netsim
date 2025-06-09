@@ -35,6 +35,16 @@ public class IdentityProtocol implements Protocol {
             this.previousProtocol = previousProtocol;
       }
 
+      /** @return null */
+      public Address getSource() {
+            return null;
+      }
+
+      /** @return null */
+      public Address getDestination() {
+            return null;
+      }
+
       /** return null */
       public Address extractSource(byte[] pdu) {
             return null;

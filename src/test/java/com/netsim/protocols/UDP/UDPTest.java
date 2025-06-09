@@ -18,34 +18,34 @@ public class UDPTest {
     private static final Port SRC = new Port("1000");
     private static final Port DST = new Port("2000");
     private byte[] payload;
-    private UDP udp;
+    private UDPProtocol udp;
 
     @Before
     public void setUp() {
         payload = "HELLOWORLD".getBytes(StandardCharsets.US_ASCII);
-        udp = new UDP(1024, SRC, DST);  // MSS large enough for single segment
+        udp = new UDPProtocol(1024, SRC, DST);  // MSS large enough for single segment
     }
 
     // —— Constructor tests —— //
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsZeroMSS() {
-        new UDP(0, SRC, DST);
+        new UDPProtocol(0, SRC, DST);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsNegativeMSS() {
-        new UDP(-1, SRC, DST);
+        new UDPProtocol(-1, SRC, DST);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsNullSource() {
-        new UDP(100, null, DST);
+        new UDPProtocol(100, null, DST);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsNullDestination() {
-        new UDP(100, SRC, null);
+        new UDPProtocol(100, SRC, null);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class UDPTest {
     @Test
     public void encapsulateMultipleSegments() {
         // set MSS small to force fragmentation
-        udp = new UDP(4, SRC, DST);
+        udp = new UDPProtocol(4, SRC, DST);
 
         Protocol stubNext = new IdentityProtocol();
         udp.setNext(stubNext);

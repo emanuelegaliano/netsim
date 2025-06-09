@@ -23,27 +23,26 @@ public class ProtocolPipelineTest {
         boolean encapsulateCalled = false;
         boolean decapsulateCalled = false;
 
-        @Override
         public byte[] encapsulate(byte[] pdu) {
             encapsulateCalled = true;
             return pdu;
         }
 
-        @Override
         public byte[] decapsulate(byte[] pdu) {
             decapsulateCalled = true;
             return pdu;
         }
 
-        @Override public void setNext(Protocol next)     { /* no-op */ }
-        @Override public void setPrevious(Protocol prev) { /* no-op */ }
+        public Address getSource() { return null; }
+        public Address getDestination() { return null; }
 
-        @Override
+        public void setNext(Protocol next) { /* no-op */ }
+        public void setPrevious(Protocol prev) { /* no-op */ }
+
         public Address extractSource(byte[] pdu) {
             return null;
         }
 
-        @Override
         public Address extractDestination(byte[] pdu) {
             return null;
         }

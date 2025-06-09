@@ -11,7 +11,7 @@ import com.netsim.addresses.Port;
 
 import com.netsim.networkstack.Protocol;
 
-public class UDP implements Protocol {
+public class UDPProtocol implements Protocol {
         private final Port sourcePort;
         private final Port destinationPort;
         private final int MSS; // maximum segment size
@@ -25,7 +25,7 @@ public class UDP implements Protocol {
          * @param destination the destination port of the message
          * @throws IllegalArgumentException when MSS <= 0 and when source or destination is null
          */
-        public UDP(int MSS, Port source, Port destination) throws IllegalArgumentException {
+        public UDPProtocol(int MSS, Port source, Port destination) throws IllegalArgumentException {
             if(MSS <= 0)
                 throw new IllegalArgumentException("UDP: segment size must be positive");
 
@@ -208,6 +208,15 @@ public class UDP implements Protocol {
                 
                 this.previousProtocol = previousProtocol;
         }  
+
+        public Port getSource() {
+            return this.sourcePort;
+        }
+
+        public Port getDestination() {
+            return this.destinationPort;
+        }
+
         /**
          * Extracts the source port from a single UDP segment byte array.
          *

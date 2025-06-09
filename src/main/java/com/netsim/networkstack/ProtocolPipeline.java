@@ -50,5 +50,12 @@ public class ProtocolPipeline {
             // decapsulating through chain, using size-1 because size protocol is IdentityProtocol
             return this.protocols.get(size-1).decapsulate(data);
       }
+
+      public Protocol getProtocolAt(int index) throws IndexOutOfBoundsException {
+            if(index == 0 || index > this.protocols.size())
+                  throw new IndexOutOfBoundsException("ProtocolPipeline: index out of bound");
+
+            return this.protocols.get(index);
+      }
 }
 

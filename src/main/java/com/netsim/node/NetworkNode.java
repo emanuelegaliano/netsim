@@ -81,5 +81,5 @@ public abstract class NetworkNode {
             } catch(RuntimeException e) {
                   Logger.getInstance().error(e.getLocalizedMessage());
             }
-      }     
+      }
 }

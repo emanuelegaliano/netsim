@@ -274,7 +274,14 @@ public class IPv4Protocol implements Protocol {
             this.previousProtocol = previousProtocol;
       }
 
-      
+      public IPv4 getSource() {
+            return this.source;
+      }
+
+      public IPv4 getDestination() {
+            return this.destination;
+      }
+
       /**
        * Extracts the source IPv4 address from a single IPv4 packet.
        *

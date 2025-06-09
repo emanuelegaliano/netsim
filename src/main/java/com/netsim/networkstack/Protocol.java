@@ -35,6 +35,12 @@ public interface Protocol {
      */
     public void setPrevious(Protocol previousProtocol);
 
+    /** @return address of source */
+    public Address getSource();
+
+    /** @return address of destination */
+    public Address getDestination();
+
     /**
      * Using non-static method because in java it's not possible 
      * to define a static method in interfaces without its implementation

@@ -134,7 +134,13 @@ public class SimpleDLLProtocol implements Protocol {
             this.previousProtocol = previousProtocol;
       }
 
+      public Mac getSource() {
+            return this.source;
+      }
 
+      public Mac getDestination() {
+            return this.destination;
+      }
 
       /**
        * extracts the bytes from 6 to 12 of destination mac
