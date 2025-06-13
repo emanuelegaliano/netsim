@@ -332,4 +332,18 @@ public class IPv4Protocol implements Protocol {
             return new IPv4(dotted, 0);
       }
 
+      public Protocol copy() {
+            IPv4Protocol clone = new IPv4Protocol(
+                  this.source,
+                  this.destination,
+                  this.IHL,
+                  this.typeOfService,
+                  this.identification,
+                  this.flags,
+                  this.ttl,
+                  this.protocol,
+                  this.MTU
+            );
+            return clone;
+      }
 }

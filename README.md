@@ -2,7 +2,7 @@
 A simulator for a network topology
 
 cose da fare:
-- aggiungere i test per NetworkAdapter e NetworkAdapterSplitterProtocol
+- scrivere i test per NetworkAdapter, NetworkNode (Host fra poco), aggiornare i test per ArpTable
 
 
 

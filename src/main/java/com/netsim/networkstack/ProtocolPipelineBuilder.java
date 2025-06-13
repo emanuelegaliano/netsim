@@ -14,7 +14,6 @@ public class ProtocolPipelineBuilder {
        */
       public ProtocolPipelineBuilder() {
             this.protocols = new ArrayList<>();
-            this.protocols.add(new IdentityProtocol());
       }
 
       /**
@@ -28,7 +27,7 @@ public class ProtocolPipelineBuilder {
             if(newProtocol == null)
                   throw new IllegalArgumentException("ProtocolPipelineBuilder: protocol cannot be null");
 
-            Protocol lastProtocol = this.protocols.getLast();
+            Protocol lastProtocol = this.protocols.get(this.protocols.size()-1);
             lastProtocol.setNext(newProtocol);
             newProtocol.setPrevious(lastProtocol);
             this.protocols.add(newProtocol);
@@ -41,8 +40,6 @@ public class ProtocolPipelineBuilder {
        * @return a new ProtocolPipeline with internal list of protocols
        */
       public ProtocolPipeline build() {
-            this.protocols.getLast().setNext(new IdentityProtocol());
-
-            return new ProtocolPipeline(this.protocols);
+            return new ProtocolPipeline(new ArrayList<>(this.protocols));
       }
 }

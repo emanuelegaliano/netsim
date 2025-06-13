@@ -58,4 +58,11 @@ public interface Protocol {
      * @return the destination address
      */
     public Address extractDestination(byte[] pdu);
+
+    /**
+     * Used for extract a protocol without touching
+     * chain of responsibility
+     * @return
+     */
+    public Protocol copy();
 }

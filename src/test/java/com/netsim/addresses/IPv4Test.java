@@ -121,4 +121,11 @@ public class IPv4Test {
         assertEquals("Address should be represented in 32 bits", 32, bytes.length * 8);
     }
     
+    @Test
+    public void testSubnetBroadcast() {
+        IPv4 ip = new IPv4("192.168.1.0", 24);
+        IPv4 expectedBroadcast = new IPv4("192.168.1.255", 24);
+        
+        assertEquals(expectedBroadcast.stringRepresentation(), ip.subnetBroadcast().stringRepresentation());
+    }
 }

@@ -2,10 +2,10 @@ package com.netsim.table;
 
 import java.util.HashMap;
 
-import com.netsim.addresses.IP;
+import com.netsim.addresses.IPv4;
 
-public class RoutingTable implements NetworkTable<IP, RoutingInfo> {
-      private HashMap<IP, RoutingInfo> table;
+public class RoutingTable implements NetworkTable<IPv4, RoutingInfo> {
+      private HashMap<IPv4, RoutingInfo> table;
 
       public RoutingTable() {
             this.table = new HashMap<>();
@@ -16,7 +16,7 @@ public class RoutingTable implements NetworkTable<IP, RoutingInfo> {
        * @throws IllegalArgumentException if destination is null
        * @throws NullPointerException if destination is not found 
        */
-      public RoutingInfo lookup(IP destination) throws IllegalArgumentException, NullPointerException {
+      public RoutingInfo lookup(IPv4 destination) throws IllegalArgumentException, NullPointerException {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
@@ -33,24 +33,36 @@ public class RoutingTable implements NetworkTable<IP, RoutingInfo> {
        * @throws IllegalArgumentException if either desination or route is null
        * @throws RuntimeException if the route is already contained
        */
-      public void add(IP destination, RoutingInfo route) throws IllegalArgumentException, RuntimeException {
+      public void add(IPv4 destination, RoutingInfo route) throws IllegalArgumentException, RuntimeException {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
-
             if(route == null)
                   throw new IllegalArgumentException("RoutingTable: route cannot be null");
-
             if(this.table.containsKey(destination))
                   throw new RuntimeException("RoutingTable: route already contained");
 
             this.table.put(destination, route);
       }
 
+      public void setDefault(RoutingInfo route) throws IllegalArgumentException {
+            if(route == null)
+                  throw new IllegalArgumentException("RoutingTable: route cannot be null");
+
+            IPv4 defaultIP = new IPv4("0.0.0.0", 0);
+                  
+
+            if(this.table.containsKey(defaultIP))
+                  this.table.remove(defaultIP);
+            
+            this.add(defaultIP, route);
+            
+      }
+
             /**
        * @param destination the destination of the route that will be removed
        * @throws IllegalArgumentException if destination null
        */
-      public void remove(IP destination) throws IllegalArgumentException {
+      public void remove(IPv4 destination) throws IllegalArgumentException {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 

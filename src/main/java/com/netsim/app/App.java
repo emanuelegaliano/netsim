@@ -21,6 +21,10 @@ public abstract class App {
             this.usage = usage;
             this.name = name;
       }
+      
+      public abstract void start();
+      public abstract void receive(byte[] data);
+      public abstract void printAppMessage(String message);
 
       /** @return names of the App */
       public String getName() {

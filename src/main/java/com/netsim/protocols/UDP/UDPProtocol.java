@@ -246,4 +246,8 @@ public class UDPProtocol implements Protocol {
             int dstPortVal = ((segment[2] & 0xFF) << 8) | (segment[3] & 0xFF);
             return new Port(String.valueOf(dstPortVal));
         }
+
+        public UDPProtocol copy() {
+            return new UDPProtocol(this.MSS, this.sourcePort, this.destinationPort);
+        }
 }

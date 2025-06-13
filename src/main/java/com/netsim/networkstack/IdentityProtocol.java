@@ -54,4 +54,8 @@ public class IdentityProtocol implements Protocol {
       public Address extractDestination(byte[] pdu) {
             return null;
       }
+
+      public IdentityProtocol copy() {
+            return new IdentityProtocol();
+      }
 }

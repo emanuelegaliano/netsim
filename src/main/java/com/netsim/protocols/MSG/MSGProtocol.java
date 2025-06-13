@@ -112,4 +112,8 @@ public class MSGProtocol implements Protocol {
     public int hashCode() {
         return Objects.hash(name);
     }
+
+    public MSGProtocol copy() {
+        return new MSGProtocol(this.name);
+    }
 }

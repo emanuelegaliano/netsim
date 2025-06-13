@@ -172,4 +172,13 @@ public class SimpleDLLProtocol implements Protocol {
             
             return Mac.bytesToMac(Arrays.copyOfRange(frame, 0, 6));
       }
+
+      /**
+     * Create a fresh copy of this protocol with the same source and destination MACs.
+     * Does not preserve next/previous links.
+     */
+    public SimpleDLLProtocol copy() {
+        return new SimpleDLLProtocol(this.source, this.destination);
+    }
+
 }

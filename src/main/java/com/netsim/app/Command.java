@@ -1,6 +1,6 @@
 package com.netsim.app;
 
-import com.netsim.node.NetworkNode;
+import com.netsim.network.NetworkNode;
 
 public interface Command {
       /**
@@ -9,7 +9,7 @@ public interface Command {
        * @param node the network node
        * @param args the arguments of the Command
        */
-      void execute(NetworkNode node, String[] args);
+      void execute(App app, NetworkNode node, String[] args);
       /**
        * A costant help message description
        * @return short message description

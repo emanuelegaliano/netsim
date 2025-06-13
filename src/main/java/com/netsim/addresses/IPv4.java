@@ -1,5 +1,7 @@
 package com.netsim.addresses;
 
+import java.util.Arrays;
+
 public class IPv4 extends IP {
 
     /**
@@ -126,5 +128,31 @@ public class IPv4 extends IP {
         }
 
         return true;
+    }
+
+    /** @return global broadcast */
+    public static IPv4 broadcast() {
+        return new IPv4("255.255.255.255", 0);
+    }
+
+    /** @return broadcast based on the current subnet */
+    public IPv4 subnetBroadcast() {
+        String[] ipParts = this.stringRepresentation().split("\\.");
+        int ip = 0;
+
+        for (int i = 0; i < 4; i++)
+            ip |= (Integer.parseInt(ipParts[i]) << (24 - (8 * i)));
+
+        int subnetMask = 0xFFFFFFFF << (32 - this.mask.getPrefix());
+
+        int broadcast = ip | (~subnetMask);
+
+        String broadcastStr = 
+            ((broadcast >> 24) & 0xFF) + "." +
+            ((broadcast >> 16) & 0xFF) + "." +
+            ((broadcast >> 8) & 0xFF) + "." +
+            (broadcast & 0xFF);
+
+        return new IPv4(broadcastStr, this.mask.getPrefix());
     }
 }

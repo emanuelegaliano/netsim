@@ -5,15 +5,14 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.netsim.addresses.IP;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
-import com.netsim.networkstack.NetworkAdapter;
+import com.netsim.network.NetworkAdapter;
 
 public class RoutingTableTest {
     private RoutingTable routingTable;
-    private IP dest1;
-    private IP dest2;
+    private IPv4 dest1;
+    private IPv4 dest2;
     private NetworkAdapter adapter1;
     private NetworkAdapter adapter2;
     private RoutingInfo info1;
@@ -34,7 +33,7 @@ public class RoutingTableTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void lookupRejectsNullDestination() {
-        routingTable.lookup((IP) null);
+        routingTable.lookup(null);
     }
 
     @Test(expected = NullPointerException.class)
@@ -82,7 +81,7 @@ public class RoutingTableTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void removeRejectsNullDestination() {
-        routingTable.remove((IP) null);
+        routingTable.remove(null);
     }
 
     @Test(expected = NullPointerException.class)

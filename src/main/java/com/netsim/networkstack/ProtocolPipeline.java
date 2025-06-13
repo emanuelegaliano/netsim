@@ -1,5 +1,6 @@
 package com.netsim.networkstack;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProtocolPipeline {
@@ -11,10 +12,45 @@ public class ProtocolPipeline {
        * @throws IllegalArgumentException if either protocols is null or is empty
        */
       public ProtocolPipeline(List<Protocol> protocols) throws IllegalArgumentException {
-            if(protocols == null || protocols.size() == 0)
+            if(protocols == null || protocols.isEmpty())
                   throw new IllegalArgumentException("ProtocolPipeline: protocols list cannot be null or empty");
-            
-            this.protocols = protocols;
+
+            // Build an internal list with two extra IdentityProtocol endpoints
+            this.protocols = new ArrayList<>(protocols.size() + 2);
+
+            // 1) leading identity
+            IdentityProtocol head = new IdentityProtocol();
+            this.protocols.add(head);
+
+            // 2) real protocols, wiring next/previous pointers
+            Protocol prev = head;
+            for (Protocol p : protocols) {
+                  if (p == null) 
+                        throw new IllegalArgumentException("ProtocolPipeline: protocols list must not contain null");
+                  prev.setNext(p);
+                  p.setPrevious(prev);
+                  this.protocols.add(p);
+                  prev = p;
+            }
+
+            // 3) trailing identity
+            IdentityProtocol tail = new IdentityProtocol();
+            prev.setNext(tail);
+            tail.setPrevious(prev);
+            this.protocols.add(tail);
+      }
+
+      /**
+       * This method returns the size minus IdentityProtocol 
+       * upper and lower bounds.
+       * @return the dimension of the purely used protocols
+       * @throws IllegalArgumentException
+       */
+      public int size() throws IllegalArgumentException {
+            if(protocols.size() <= 2)
+                  throw new IllegalArgumentException("ProtocolPipeline: no protocols found");
+
+            return this.protocols.size()-2;
       }
 
       /**
@@ -51,11 +87,56 @@ public class ProtocolPipeline {
             return this.protocols.get(size-1).decapsulate(data);
       }
 
-      public Protocol getProtocolAt(int index) throws IndexOutOfBoundsException {
-            if(index == 0 || index > this.protocols.size())
-                  throw new IndexOutOfBoundsException("ProtocolPipeline: index out of bound");
-
-            return this.protocols.get(index);
+      public Protocol getProtocolAt(int index) {
+            if(index < 0 || index >= this.size())
+                  throw new IllegalArgumentException(
+                        "getProtocolsTo: count must be between 1 and " + protocols.size()
+                  );
+            
+            return this.protocols.get(index+1).copy();
       }
+
+      /**
+       * Return a new ProtocolPipeline containing
+       * just the first {@code count} protocols from this one.
+       *
+       * @param count how many protocols to include (must be ≥1 and ≤ size)
+       * @return a new ProtocolPipeline over protocols[0..count-1]
+       * @throws IllegalArgumentException if count is out of range
+       */
+      public ProtocolPipeline getProtocolsRange(int count) {
+            if(count <= 0 || count >= protocols.size()-2) {
+                  throw new IllegalArgumentException(
+                  "getProtocolsTo: count must be between 1 and " + protocols.size()
+                  );
+            }
+
+            List<Protocol> sub = new ArrayList<>(
+                  this.protocols.subList(1, 1 + count)
+            );
+
+            return new ProtocolPipeline(sub);
+      }
+
+      public List<Protocol> getProtocols() {
+            if(this.protocols.size() <= 2)
+                  throw new IllegalArgumentException("ProtocolPipeline: no protocols found");
+
+            return this.protocols;
+      }
+
+      public <T extends Protocol> T getProtocolByClass(Class<T> clazz) {
+            return protocols.stream()
+                            .filter(clazz::isInstance)
+                            .map(clazz::cast)
+                            .findFirst()
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                          "ProtocolPipeline: Protocol not found " 
+                                          + clazz.getSimpleName()
+                                    )
+                            );
+      }
+
 }
 

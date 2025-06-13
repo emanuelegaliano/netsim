@@ -5,24 +5,23 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.netsim.addresses.IP;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
 
 public class ArpTableTest {
     private ArpTable arpTable;
-    private IP ip1;
-    private IP ip2;
+    private IPv4 ip1;
+    private IPv4 ip2;
     private Mac mac1;
     private Mac mac2;
 
     @Before
     public void setUp() {
         arpTable = new ArpTable();
-        ip1   = new IPv4("192.168.0.10", 32);
-        ip2   = new IPv4("10.0.0.5",     32);
-        mac1  = new Mac("aa:bb:cc:00:11:22");
-        mac2  = new Mac("aa:bb:cc:00:33:44");
+        ip1 = new IPv4("192.168.0.10", 32);
+        ip2 = new IPv4("10.0.0.5",     32);
+        mac1 = new Mac("aa:bb:cc:00:11:22");
+        mac2 = new Mac("aa:bb:cc:00:33:44");
     }
 
     // —— Tests for add(...) and lookup(...) —— //

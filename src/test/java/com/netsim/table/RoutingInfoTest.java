@@ -5,16 +5,15 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.netsim.addresses.IP;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
-import com.netsim.networkstack.NetworkAdapter;
+import com.netsim.network.NetworkAdapter;
 
 public class RoutingInfoTest {
     private NetworkAdapter adapter1;
     private NetworkAdapter adapter2;
-    private IP nextHop1;
-    private IP nextHop2;
+    private IPv4 nextHop1;
+    private IPv4 nextHop2;
 
     @Before
     public void setUp() {

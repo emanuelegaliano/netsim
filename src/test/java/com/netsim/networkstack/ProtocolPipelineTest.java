@@ -4,11 +4,9 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import com.netsim.addresses.Address;
+
+import java.util.*;
 
 /**
  * Unit tests for ProtocolPipeline.
@@ -16,36 +14,36 @@ import com.netsim.addresses.Address;
 public class ProtocolPipelineTest {
     private byte[] sampleData;
 
-    /**
-     * A minimal Protocol stub that records whether its methods were invoked.
-     */
+    /** A minimal spy‐protocol that records whether its methods were invoked. */
     private static class SpyProtocol implements Protocol {
-        boolean encapsulateCalled = false;
-        boolean decapsulateCalled = false;
+        boolean enc = false, dec = false;
 
-        public byte[] encapsulate(byte[] pdu) {
-            encapsulateCalled = true;
-            return pdu;
+        @Override public byte[] encapsulate(byte[] pdu) {
+            enc = true; return pdu;
         }
-
-        public byte[] decapsulate(byte[] pdu) {
-            decapsulateCalled = true;
-            return pdu;
+        @Override public byte[] decapsulate(byte[] pdu) {
+            dec = true; return pdu;
         }
+        @Override public void setNext(Protocol next)        { /* no‐op */ }
+        @Override public void setPrevious(Protocol prev)    { /* no‐op */ }
+        @Override public Address getSource()                { return null; }
+        @Override public Address getDestination()           { return null; }
+        @Override public Address extractSource(byte[] pdu)  { return null; }
+        @Override public Address extractDestination(byte[] pdu) { return null; }
+        /** Required by getProtocolAt() in your implementation */
+        public SpyProtocol copy() { return new SpyProtocol(); }
+    }
 
-        public Address getSource() { return null; }
-        public Address getDestination() { return null; }
-
-        public void setNext(Protocol next) { /* no-op */ }
-        public void setPrevious(Protocol prev) { /* no-op */ }
-
-        public Address extractSource(byte[] pdu) {
-            return null;
-        }
-
-        public Address extractDestination(byte[] pdu) {
-            return null;
-        }
+    private static class FakeProtocol implements Protocol {
+        @Override public byte[] encapsulate(byte[] pdu)          { return pdu; }
+        @Override public byte[] decapsulate(byte[] pdu)         { return pdu; }
+        @Override public void setNext(Protocol next)            { }
+        @Override public void setPrevious(Protocol prev)        { }
+        @Override public Address getSource()                    { return null; }
+        @Override public Address getDestination()               { return null; }
+        @Override public Address extractSource(byte[] pdu)      { return null; }
+        @Override public Address extractDestination(byte[] pdu) { return null; }
+        @Override public FakeProtocol copy() { return null; }
     }
 
     @Before
@@ -53,86 +51,186 @@ public class ProtocolPipelineTest {
         sampleData = new byte[] { 0x01, 0x02, 0x03 };
     }
 
+    //–– constructor tests –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
     @Test(expected = IllegalArgumentException.class)
-    public void constructorRejectsNullList() {
+    public void ctorRejectsNullList() {
         new ProtocolPipeline(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructorRejectsEmptyList() {
-        new ProtocolPipeline(Collections.emptyList());
+    public void ctorRejectsEmptyList() {
+        new ProtocolPipeline(Collections.<Protocol>emptyList());
     }
 
     @Test(expected = IllegalArgumentException.class)
+    public void ctorRejectsNullElement() {
+        List<Protocol> list = Arrays.asList(new SpyProtocol(), null);
+        new ProtocolPipeline(list);
+    }
+
+    //–– size() tests ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+    @Test
+    public void sizeSingleProtocol() {
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        assertEquals(1, pp.size());
+    }
+
+    @Test
+    public void sizeMultipleProtocols() {
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Arrays.asList(new SpyProtocol(), new SpyProtocol(), new SpyProtocol())
+        );
+        assertEquals(3, pp.size());
+    }
+
+    //–– encapsulate(...) tests ––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+    @Test(expected = IllegalArgumentException.class)
     public void encapsulateRejectsNullData() {
-        List<Protocol> list = Arrays.asList(new IdentityProtocol(), new SpyProtocol());
-        ProtocolPipeline pipeline = new ProtocolPipeline(list);
-        pipeline.encapsulate(null);
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        pp.encapsulate(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void encapsulateRejectsEmptyData() {
-        List<Protocol> list = Arrays.asList(new IdentityProtocol(), new SpyProtocol());
-        ProtocolPipeline pipeline = new ProtocolPipeline(list);
-        pipeline.encapsulate(new byte[0]);
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        pp.encapsulate(new byte[0]);
     }
+
+    @Test
+    public void encapsulateInvokesFirstReal() {
+        SpyProtocol spy = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(spy)
+        );
+        byte[] out = pp.encapsulate(sampleData);
+        assertTrue("first real protocol must be called", spy.enc);
+        assertArrayEquals("encapsulate must return input when spy echoes", sampleData, out);
+    }
+
+    //–– decapsulate(...) tests ––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
     @Test(expected = IllegalArgumentException.class)
     public void decapsulateRejectsNullData() {
-        List<Protocol> list = Arrays.asList(new IdentityProtocol(), new SpyProtocol());
-        ProtocolPipeline pipeline = new ProtocolPipeline(list);
-        pipeline.decapsulate(null);
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        pp.decapsulate(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void decapsulateRejectsEmptyData() {
-        List<Protocol> list = Arrays.asList(new IdentityProtocol(), new SpyProtocol());
-        ProtocolPipeline pipeline = new ProtocolPipeline(list);
-        pipeline.decapsulate(new byte[0]);
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        pp.decapsulate(new byte[0]);
     }
 
     @Test
-    public void encapsulateInvokesSecondProtocol() {
+    public void decapsulateInvokesOnlyIdentity() {
         SpyProtocol spy = new SpyProtocol();
-        List<Protocol> list = Arrays.asList(new IdentityProtocol(), spy);
-        ProtocolPipeline pipeline = new ProtocolPipeline(list);
-
-        byte[] out = pipeline.encapsulate(sampleData);
-
-        assertTrue("Second protocol should handle encapsulate", spy.encapsulateCalled);
-        assertArrayEquals("Output should equal input", sampleData, out);
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(spy)
+        );
+        byte[] out = pp.decapsulate(sampleData);
+        assertFalse("real protocol must NOT see decapsulate", spy.dec);
+        assertArrayEquals("decapsulate must return input unchanged", sampleData, out);
     }
+
+    //–– getProtocolAt(int) tests ––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
     @Test
-    public void decapsulateInvokesLastProtocol() {
-        SpyProtocol spy1 = new SpyProtocol();
-        SpyProtocol spy2 = new SpyProtocol();
-        List<Protocol> list = Arrays.asList(new IdentityProtocol(), spy1, spy2);
-        ProtocolPipeline pipeline = new ProtocolPipeline(list);
+    public void getProtocolAtValidIndexes() {
+        SpyProtocol a = new SpyProtocol();
+        SpyProtocol b = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(Arrays.asList(a, b));
 
-        byte[] out = pipeline.decapsulate(sampleData);
+        Protocol p0 = pp.getProtocolAt(0);
+        Protocol p1 = pp.getProtocolAt(1);
 
-        assertTrue("Last protocol should handle decapsulate", spy2.decapsulateCalled);
-        assertFalse("Middle protocol should not be called on decapsulate", spy1.decapsulateCalled);
-        assertArrayEquals("Output should equal input", sampleData, out);
+        assertTrue(p0 instanceof SpyProtocol);
+        assertTrue(p1 instanceof SpyProtocol);
+        assertNotSame(a, p0);
+        assertNotSame(b, p1);
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void encapsulateWithSingleProtocolThrows() {
-        // Only identity in list → no protocol at index 1
-        ProtocolPipeline pipeline = new ProtocolPipeline(
-            Collections.singletonList(new IdentityProtocol())
+    @Test(expected = IllegalArgumentException.class)
+    public void getProtocolAtNegativeIndex() {
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
         );
-        pipeline.encapsulate(sampleData);
+        pp.getProtocolAt(-1);
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getProtocolAtTooLargeIndex() {
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        pp.getProtocolAt(1);
+    }
+
+    //–– getProtocolsRange(int) tests ––––––––––––––––––––––––––––––––––––––––––––––––––
 
     @Test
-    public void decapsulateWithSingleProtocolPassesThrough() {
-        // Only identity in list → decapsulate returns data unchanged
-        ProtocolPipeline pipeline = new ProtocolPipeline(
-            Collections.singletonList(new IdentityProtocol())
+    public void getProtocolsRangeHappyPath() {
+        SpyProtocol a = new SpyProtocol();
+        SpyProtocol b = new SpyProtocol();
+        SpyProtocol c = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(Arrays.asList(a, b, c));
+
+        // take only first two real protocols [a,b]
+        ProtocolPipeline sub = pp.getProtocolsRange(2);
+
+        // sub.encapsulate invokes sub’s first real → that is a
+        byte[] out = sub.encapsulate(sampleData);
+        assertTrue("sub‐pipeline must call a", a.enc);
+        assertFalse("b must not be called when only range=2", b.enc);
+        assertArrayEquals(sampleData, out);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getProtocolsRangeRejectsZero() {
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
         );
-        byte[] out = pipeline.decapsulate(sampleData);
-        assertArrayEquals("With only identity, decapsulate should pass through", sampleData, out);
+        pp.getProtocolsRange(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getProtocolsRangeRejectsTooLarge() {
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(new SpyProtocol())
+        );
+        pp.getProtocolsRange(2);
+    }
+
+
+    @Test
+    public void getProtocolByClassReturnsCorrectInstance() {
+        SpyProtocol a = new SpyProtocol();
+        SpyProtocol b = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(Arrays.asList(a, b));
+
+        // deve restituire proprio 'a', essendo il primo SpyProtocol nella catena
+        SpyProtocol found = pp.getProtocolByClass(SpyProtocol.class);
+        assertSame("Should return the very same SpyProtocol instance", a, found);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void getProtocolByClassThrowsWhenMissing() {
+        SpyProtocol a = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(Collections.singletonList(a));
+
+        // FakeProtocol NON è nella catena → RuntimeException
+        pp.getProtocolByClass(FakeProtocol.class);
     }
 }

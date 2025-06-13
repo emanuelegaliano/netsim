@@ -62,6 +62,8 @@ public class MSGProtocolTest {
             @Override public Address getDestination() { return null; }
             @Override public Address extractSource(byte[] pdu) { return null; }
             @Override public Address extractDestination(byte[] pdu) { return null; }
+            @Override public Protocol copy() { return this; }
+
         };
         proto.setNext(stubNext);
 

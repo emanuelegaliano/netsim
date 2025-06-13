@@ -5,14 +5,13 @@ import java.util.Scanner;
 
 import com.netsim.app.App;
 import com.netsim.app.Command;
-
-import com.netsim.node.NetworkNode;
-import com.netsim.addresses.IP;;
+import com.netsim.network.NetworkNode;
+import com.netsim.addresses.IPv4;
 
 public class NetsimMsg extends App {
       private String username;
       private final NetworkNode node;
-      private IP serverIP;
+      private IPv4 serverIP;
       private Scanner input;
 
       public NetsimMsg(NetworkNode node) throws IllegalArgumentException {
@@ -26,6 +25,27 @@ public class NetsimMsg extends App {
             this.node = node;
             this.input = new Scanner(System.in);
             this.serverIP = null;
+      }
+
+      /**
+       * server setted by Connect Command
+       * @param server ip of server
+       * @throws IllegalArgumentException if server is null,
+       *                                  if server ip is a subnet, 
+       *                                     should be a single ip
+       * 
+       */
+      public void setServer(IPv4 server) throws IllegalArgumentException {
+            if(server == null)
+                  throw new IllegalArgumentException("NetsimMsg: server ip cannot be null");
+            if(server.getMask() != 0)
+                  throw new IllegalArgumentException("NetsimMsg: server ip cannot be a subnet");
+            
+            this.serverIP = server;
+      }
+
+      public IPv4 getServer() {
+            return this.serverIP;
       }
 
       /** first method called on start() in order to set username */
@@ -75,11 +95,13 @@ public class NetsimMsg extends App {
                   String[] cmdArgs = Arrays.copyOfRange(tokens, 1, tokens.length);
                   try {
                         Command cmd = NetsimMsgCommandFactory.get(cmdName);
-                        cmd.execute(this.node, cmdArgs);
+                        cmd.execute(this, this.node, cmdArgs);
                   } catch(final IllegalArgumentException e) {
                         this.printUsage();
                         continue;
-                  }                  
+                  } catch(final RuntimeException e) {
+                        System.out.println(e.getLocalizedMessage());
+                  }    
             }
       }
 }
