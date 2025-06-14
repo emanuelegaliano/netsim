@@ -3,6 +3,8 @@ package com.netsim.networkstack;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.netsim.addresses.Address;
+
 public class ProtocolPipeline {
       private final List<Protocol> protocols;
 
@@ -117,16 +119,26 @@ public class ProtocolPipeline {
 
             return new ProtocolPipeline(sub);
       }
-
-      public List<Protocol> getProtocols() {
+      
+      /**
+       * @return list of protocol
+       * @throws IllegalArgumentException if the list of protocols only contains IdentityProtocol
+       */
+      public List<Protocol> getProtocols() throws IllegalArgumentException{
             if(this.protocols.size() <= 2)
                   throw new IllegalArgumentException("ProtocolPipeline: no protocols found");
 
             return this.protocols;
       }
 
-      public <T extends Protocol> T getProtocolByClass(Class<T> clazz) {
-            return protocols.stream()
+      /**
+       * Using streams protocol class is searched in the list
+       * @param clazz the class type of the protocol
+       * @return a copy of the protocol used in the pipeline
+       * @throws RuntimeException if protocol is not found
+       */
+      public <T extends Protocol> T getProtocolByClass(Class<T> clazz) throws RuntimeException {
+            T originalP = protocols.stream()
                             .filter(clazz::isInstance)
                             .map(clazz::cast)
                             .findFirst()
@@ -136,7 +148,59 @@ public class ProtocolPipeline {
                                           + clazz.getSimpleName()
                                     )
                             );
+
+            return clazz.cast(originalP.copy());
       }
 
+      public <T extends Protocol> Address extractDestinationFrom(Class<T> clazz, byte[] data) 
+      throws IllegalArgumentException {
+            // stessa logica di sopra, ma chiami extractDestination(...)
+            if(clazz == null || data == null) 
+                  throw new IllegalArgumentException("extractDestinationFrom: arguments cannot be null");
+
+            int idx = -1;
+            for (int i = 0; i < this.protocols.size(); i++) {
+                  if (clazz.isInstance(this.protocols.get(i))) {
+                        idx = i;
+                        break;
+                  }
+            }
+            if(idx < 0) 
+                  throw new IllegalArgumentException("ProtocolPipeline: no protocol of type " + clazz.getSimpleName());
+
+            byte[] pdu = data;
+            for(int i = this.protocols.size() - 1; i > idx; i--)
+                  pdu = this.protocols.get(i).decapsulate(pdu);
+            
+
+            @SuppressWarnings("unchecked")
+            T target = (T) this.protocols.get(idx);
+            return target.extractDestination(pdu);
+      }
+
+      public <T extends Protocol> Address extractSourceFrom(Class<T> clazz, byte[] data) {
+            // stessa logica di sopra, ma chiami extractDestination(...)
+            if(clazz == null || data == null) 
+                  throw new IllegalArgumentException("extractDestinationFrom: arguments cannot be null");
+
+            int idx = -1;
+            for (int i = 0; i < this.protocols.size(); i++) {
+                  if (clazz.isInstance(this.protocols.get(i))) {
+                        idx = i;
+                        break;
+                  }
+            }
+            if(idx < 0) 
+                  throw new IllegalArgumentException("ProtocolPipeline: no protocol of type " + clazz.getSimpleName());
+
+            byte[] pdu = data;
+            for(int i = this.protocols.size() - 1; i > idx; i--)
+                  pdu = this.protocols.get(i).decapsulate(pdu);
+            
+
+            @SuppressWarnings("unchecked")
+            T target = (T) this.protocols.get(idx);
+            return target.extractSource(pdu);
+      }
 }
 

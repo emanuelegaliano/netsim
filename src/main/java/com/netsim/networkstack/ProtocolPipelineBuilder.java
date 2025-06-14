@@ -9,9 +9,6 @@ import java.util.List;
 public class ProtocolPipelineBuilder {
       private List<Protocol> protocols;
 
-      /**
-       * Add under the hood an identity protocol as lower layer
-       */
       public ProtocolPipelineBuilder() {
             this.protocols = new ArrayList<>();
       }
@@ -27,10 +24,14 @@ public class ProtocolPipelineBuilder {
             if(newProtocol == null)
                   throw new IllegalArgumentException("ProtocolPipelineBuilder: protocol cannot be null");
 
-            Protocol lastProtocol = this.protocols.get(this.protocols.size()-1);
-            lastProtocol.setNext(newProtocol);
-            newProtocol.setPrevious(lastProtocol);
-            this.protocols.add(newProtocol);
+            if(this.protocols.isEmpty()) {
+                  this.protocols.add(newProtocol);
+            } else {
+                  Protocol lastProtocol = this.protocols.get(this.protocols.size()-1);
+                  lastProtocol.setNext(newProtocol);
+                  newProtocol.setPrevious(lastProtocol);
+                  this.protocols.add(newProtocol);
+            }
 
             return this;
       }

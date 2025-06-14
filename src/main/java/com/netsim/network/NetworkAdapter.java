@@ -46,6 +46,11 @@ public final class NetworkAdapter {
             this.inGoingFrames = new LinkedList<>();
       }
 
+      /**
+       * Links this adapter to a new node
+       * @param newOwner the new node
+       * @throws IllegalArgumentException if newOwner is null
+       */
       public void setOwner(Node newOwner) throws IllegalArgumentException{
             if(newOwner == null)
                   throw new IllegalArgumentException("NetworkAdapter: node owner cannot be null");
@@ -53,6 +58,11 @@ public final class NetworkAdapter {
             this.owner = newOwner;
       }
 
+      /**
+       * 
+       * @return returns the owner
+       * @throws NullPointerException if owner is null
+       */
       public Node getNode() throws NullPointerException {
             if(this.owner == null)
                   throw new NullPointerException("NetworkAdapter: node owner not setted");
@@ -60,6 +70,11 @@ public final class NetworkAdapter {
             return this.owner;
       }
 
+      /**
+       * Links this adapter to a remote node (fake cable connection)
+       * @param newRemoteAdapter 
+       * @throws IllegalArgumentException if newRemoteAdapter is null
+       */
       public void setRemoteAdapter(NetworkAdapter newRemoteAdapter) throws IllegalArgumentException{
             if(newRemoteAdapter == null)
                   throw new IllegalArgumentException("NetworkAdapter: remote adapter cannot be null");
@@ -67,7 +82,11 @@ public final class NetworkAdapter {
             this.remote = newRemoteAdapter;
       }
 
-      public NetworkAdapter getLinkedAdapter() {
+      /**
+       * @return the (fake) cable connected "other" adapter
+       * @throws NullPointerException if remote adapter is null
+       */
+      public NetworkAdapter getLinkedAdapter() throws NullPointerException {
             if(this.remote == null)
                   throw new NullPointerException("NetworkAdapter: remote adapter not connected");
             return this.remote;
@@ -110,41 +129,54 @@ public final class NetworkAdapter {
       }
 
       
+      /**
+       * Collects a fragmented byte array of frames, checking if
+       * destination is remote adapter one.
+       * @param dllProtocol the protocol used to encapsulate the frames
+       * @param frames 
+       * @throws IllegalArgumentException if any of the arguments is invalid
+       * @throws RuntimeException if adapter is down,
+       *                          if dll protocol did not extract Mac address, 
+       *                          if adapter is empty after function call
+       */
       public void collectFrames(Protocol dllProtocol, byte[] frames) 
       throws IllegalArgumentException, RuntimeException {
-            if (dllProtocol == null || frames == null || frames.length == 0) {
+            if(dllProtocol == null || frames == null || frames.length == 0) 
                   throw new IllegalArgumentException("NetworkAdapter: invalid arguments");
-            }
-            if (!this.isUp) {
+            if(!this.isUp) 
                   throw new RuntimeException("NetworkAdapter: adapter is down");
-            }
 
             int offset = 0;
-            while (offset < frames.length) {
-                  // determine length of this single DLL frame
-                  int remaining = frames.length - offset;
-                  int frameLen = Math.min(this.MTU, remaining);
-
-                  byte[] single = Arrays.copyOfRange(frames, offset, offset + frameLen);
-
-                  // extract destination address via the Protocol interface
-                  Address maybeDest = dllProtocol.extractDestination(single);
-                  if (!(maybeDest instanceof Mac)) {
-                        throw new RuntimeException("NetworkAdapter: extractDestination did not return a Mac");
-                  }
-                  Mac destMac = (Mac) maybeDest;
-
-                  // if it’s for me, or it’s the broadcast address, collect it
-                  if (destMac.equals(this.macAddress) || destMac.equals(Mac.broadcast())) {
-                        this.outGoingFrames.add(single);
-                  }
-
+            while(offset < frames.length) {
+                  int remain = frames.length - offset;
+                  int frameLen = Math.min(this.MTU, remain);
+                  byte[] single = Arrays.copyOfRange(frames, offset, offset+frameLen);
                   offset += frameLen;
-            }
+
+                  Address maybeDest = dllProtocol.extractDestination(single);
+                  if(!(maybeDest instanceof Mac))
+                        throw new RuntimeException("NetworkAdapter: dllProtocol did not extract a Mac");
+
+                  Mac destMac = (Mac) maybeDest;
+                  Mac peerMac = this.remote.getMacAddress();
+                  if(destMac.equals(peerMac) 
+                  || destMac.equals(Mac.broadcast()))
+                        this.outGoingFrames.add(single);
             }
 
+            if(this.outGoingFrames.isEmpty())
+                  throw new RuntimeException("NetworkAdapter: no frames collected");
+      }
 
-      public byte[] releaseFrames(Protocol dllProtocol) throws RuntimeException {
+      /**
+       * Returns what's inside the inGoingFrames buffer of
+       * adapter.
+       * @param dllProtocol the protocol to use in order to remove header from frames
+       * @return byte array of inGoingFrames buffer without dllProtocol header
+       * @throws IllegalArgumentException if dllProtocol is null
+       * @throws RuntimeException if inGoingFrames buffer is empty
+       */
+      public byte[] releaseFrames(Protocol dllProtocol) throws IllegalArgumentException, RuntimeException {
             if(dllProtocol == null)
                   throw new IllegalArgumentException("NetworkAdapter: dllProtocol cannot be null");
             if(this.inGoingFrames.isEmpty())
@@ -164,19 +196,19 @@ public final class NetworkAdapter {
        * @throws IllegalArgumentException if either frame is null or is empty
        * @throws RuntimeException if adapter is down
        */
-      public void receiveFrame(byte[] frame) {
-            if(frame == null || frame.length < 12) 
-                  throw new IllegalArgumentException("…frame too short…");
+      public void receiveFrame(Protocol framingProtocol, byte[] frame) {
+            if(framingProtocol == null || frame == null) 
+                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments");
+            if(!this.isUp)
+                  throw new RuntimeException("NetworkAdapter: adapter is down");
 
-            // extract destination MAC = bytes 0–5
-            Mac dst = Mac.bytesToMac(Arrays.copyOfRange(frame, 0, 6));
-            if(!dst.equals(this.macAddress)) {
-                  throw new IllegalArgumentException(
-                  "NetworkAdapter: frame not addressed to me ("+ this.macAddress +")"
-                  );
-            }
+            Address dstAddr = framingProtocol.extractDestination(frame);
+            if(!(dstAddr instanceof Mac))
+                  throw new RuntimeException("networkAdapter: framing protocol does not extract Mac");
 
-            this.inGoingFrames.add(frame);
+            Mac dst = (Mac) dstAddr;
+            if(dst.equals(this.macAddress) || dst.equals(Mac.broadcast())) 
+                  this.inGoingFrames.add(frame);
       }
 
       /**
@@ -186,7 +218,7 @@ public final class NetworkAdapter {
        * @throws RuntimeException if adapter is down
        *                          if internal buffer(outGoingFrames) is null
        */
-      public void sendFrames() throws IllegalArgumentException, RuntimeException {
+      public void sendFrames(Protocol framingProtocol) throws IllegalArgumentException, RuntimeException {
             if(this.remote == null)
                   throw new IllegalArgumentException("NetworkAdapter: other adapter cannot be null");
             if(!this.isUp)
@@ -195,7 +227,9 @@ public final class NetworkAdapter {
                   throw new RuntimeException("NetworkAdapter: adapter out buffer is empty");
 
             for(byte[] frame : this.outGoingFrames)
-                  this.remote.receiveFrame(frame);
+                  this.remote.receiveFrame(framingProtocol, frame);
+
+            this.outGoingFrames.clear();
       }
 
       @Override
@@ -206,6 +240,11 @@ public final class NetworkAdapter {
                   return false;
             
             NetworkAdapter other = (NetworkAdapter)obj;
-            return other.getMacAddress() == this.macAddress;
+            return other.getMacAddress().equals(this.macAddress);
+      }
+
+      @Override
+      public int hashCode() {
+            return this.macAddress.hashCode();
       }
 }

@@ -1,7 +1,5 @@
 package com.netsim.addresses;
 
-import java.util.Arrays;
-
 public class IPv4 extends IP {
 
     /**
@@ -154,5 +152,34 @@ public class IPv4 extends IP {
             (broadcast & 0xFF);
 
         return new IPv4(broadcastStr, this.mask.getPrefix());
+    }
+
+    /**
+     * @return the network address (subnet) of this IPv4, 
+     *         i.e. this.address & this.mask
+     */
+    public IPv4 getSubnet() {
+        int prefix = this.mask.getPrefix();
+        if (prefix < 0 || prefix > 32) {
+            throw new IllegalStateException("Invalid mask prefix: " + prefix);
+        }
+
+        byte[] maskBytes = new Mask(prefix, 4).byteRepresentation();
+        byte[] addrBytes = this.byteRepresentation();
+
+        byte[] netBytes = new byte[4];
+        for (int i = 0; i < 4; i++) {
+            netBytes[i] = (byte)(addrBytes[i] & maskBytes[i]);
+        }
+
+        String netStr = String.format(
+            "%d.%d.%d.%d",
+            netBytes[0] & 0xFF,
+            netBytes[1] & 0xFF,
+            netBytes[2] & 0xFF,
+            netBytes[3] & 0xFF
+        );
+
+        return new IPv4(netStr, prefix);
     }
 }

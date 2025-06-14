@@ -1,4 +1,4 @@
-package com.netsim.network.Host;
+package com.netsim.network.Server;
 
 import java.util.List;
 
@@ -16,24 +16,20 @@ import com.netsim.table.ArpTable;
 import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
 
-public class Host extends NetworkNode {
-      private App runningApp;
+public class Server<AppType extends App> extends NetworkNode {
+      private final AppType app;
 
-      public Host(String name, RoutingTable routingTable, ArpTable arpTable, List<Interface> interfaces)
-      throws IllegalArgumentException {
-            super(name, routingTable, arpTable, interfaces);
-            this.runningApp = null;
-      }
+      public Server(
+            String name, 
+            RoutingTable routingTable, 
+            ArpTable arpTable, 
+            List<Interface> interfaces, 
+            AppType app) throws IllegalArgumentException {
+                  super(name, routingTable, arpTable, interfaces);
+                  if(app == null)
+                        throw new IllegalArgumentException(this.getClass().getSimpleName() + ": app cannot be null");
 
-      public void setApp(App newApp) {
-            this.runningApp = newApp;
-      }
-
-      public void runApp() {
-            if(this.runningApp == null)
-                  throw new IllegalArgumentException("Host: no App setted");
-
-            this.runningApp.start();
+                  this.app = app;
       }
 
       public void send(RoutingInfo route, ProtocolPipeline routingProtocols, byte[] data) 
@@ -49,14 +45,14 @@ public class Host extends NetworkNode {
 
             outAdapter.collectFrames(framingProtocol, data);
             outAdapter.sendFrames(framingProtocol);
-            remoteNode.receive(routingProtocols, remoteAdapter.releaseFrames(framingProtocol));           
-      }     
+            remoteNode.receive(routingProtocols, remoteAdapter.releaseFrames(framingProtocol));      
+      }
 
       public void receive(ProtocolPipeline routingProtocols, byte[] data) 
-      throws IllegalArgumentException, RuntimeException {
+      throws IllegalArgumentException {
             if(routingProtocols == null || data == null || data.length == 0)
-                  throw new IllegalArgumentException("Host: invalid arguments");
-            
+                  throw new IllegalArgumentException(this.getClass().getSimpleName() + ": invalid arguments");
+
             IPv4 destinationIP = (IPv4) routingProtocols.extractDestinationFrom(IPv4Protocol.class, data);
             boolean hostIP = false;
             for(Interface iFace : this.interfaces) {
@@ -67,11 +63,11 @@ public class Host extends NetworkNode {
             }            
 
             if(hostIP) {
-                  if(this.runningApp == null)
+                  if(this.app == null)
                         throw new RuntimeException("Host: no application setted");
 
                   IPv4 source = (IPv4) routingProtocols.extractSourceFrom(IPv4Protocol.class, data);
-                  this.runningApp.receive(source, routingProtocols.decapsulate(data));
+                  this.app.receive(source, routingProtocols.decapsulate(data));
             }
       }
 }

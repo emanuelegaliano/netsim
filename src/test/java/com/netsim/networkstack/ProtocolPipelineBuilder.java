@@ -3,10 +3,6 @@ package com.netsim.networkstack;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Builder for ProtocolPipeline.  Under-the-hood we maintain a
- * leading IdentityProtocol, then your added layers, then a trailing one.
- */
 public class ProtocolPipelineBuilder {
     private final List<Protocol> protocols = new ArrayList<>();
 

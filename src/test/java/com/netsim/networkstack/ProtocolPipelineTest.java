@@ -215,14 +215,17 @@ public class ProtocolPipelineTest {
 
 
     @Test
-    public void getProtocolByClassReturnsCorrectInstance() {
+    public void getProtocolByClassReturnsACopy() {
         SpyProtocol a = new SpyProtocol();
         SpyProtocol b = new SpyProtocol();
         ProtocolPipeline pp = new ProtocolPipeline(Arrays.asList(a, b));
 
-        // deve restituire proprio 'a', essendo il primo SpyProtocol nella catena
         SpyProtocol found = pp.getProtocolByClass(SpyProtocol.class);
-        assertSame("Should return the very same SpyProtocol instance", a, found);
+
+        // must be a SpyProtocol
+        assertTrue("Returned protocol should be a SpyProtocol", found instanceof SpyProtocol);
+        // but not the very same instance
+        assertNotSame("Should return a new copy, not the original", a, found);
     }
 
     @Test(expected = RuntimeException.class)
@@ -231,6 +234,41 @@ public class ProtocolPipelineTest {
         ProtocolPipeline pp = new ProtocolPipeline(Collections.singletonList(a));
 
         // FakeProtocol NON è nella catena → RuntimeException
+        pp.getProtocolByClass(FakeProtocol.class);
+    }
+
+    @Test
+    public void getProtocolByClassReturnsIndependentCopy() {
+        SpyProtocol original = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(original)
+        );
+
+        // ricevo la copia
+        SpyProtocol copy = pp.getProtocolByClass(SpyProtocol.class);
+
+        // controllo tipo e che NON sia la stessa istanza
+        assertTrue("copy dovrebbe essere un SpyProtocol", copy instanceof SpyProtocol);
+        assertNotSame("copy non deve essere lo stesso oggetto di original", original, copy);
+
+        // provo a farlo lavorare: setto .enc su copy e controllo che
+        // original.enc rimanga false
+        copy.encapsulate(new byte[]{0x00});
+        assertTrue("copy.enc deve essere true dopo encapsulate()", copy.enc);
+        assertFalse("original.enc deve rimanere false", original.enc);
+    }
+
+    /**
+     * Se non esiste alcun Protocol del tipo richiesto,
+     * deve lanciare RuntimeException.
+     */
+    @Test(expected = RuntimeException.class)
+    public void getProtocolByClassThrowsWhenNotFound() {
+        SpyProtocol a = new SpyProtocol();
+        ProtocolPipeline pp = new ProtocolPipeline(
+            Collections.singletonList(a)
+        );
+        // FakeProtocol non è nella catena → eccezione
         pp.getProtocolByClass(FakeProtocol.class);
     }
 }

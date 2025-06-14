@@ -1,5 +1,6 @@
 package com.netsim.app;
 
+import com.netsim.addresses.IPv4;
 import com.netsim.networkstack.ProtocolPipeline;
 
 public abstract class App {
@@ -23,7 +24,7 @@ public abstract class App {
       }
       
       public abstract void start();
-      public abstract void receive(byte[] data);
+      public abstract void receive(IPv4 source, byte[] data);
       public abstract void printAppMessage(String message);
 
       /** @return names of the App */

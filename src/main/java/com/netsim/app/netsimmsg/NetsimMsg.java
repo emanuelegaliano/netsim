@@ -104,4 +104,12 @@ public class NetsimMsg extends App {
                   }    
             }
       }
+
+      public void receive(IPv4 source, byte[] data) {
+
+      }
+
+      public void printAppMessage(String message) {
+            
+      }
 }
