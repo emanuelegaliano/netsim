@@ -1,12 +1,8 @@
-package com.netsim.network.Router;
+package com.netsim.network;
 
 import java.util.List;
 
 import com.netsim.addresses.IPv4;
-import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
-import com.netsim.network.NetworkNode;
-import com.netsim.network.Node;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
