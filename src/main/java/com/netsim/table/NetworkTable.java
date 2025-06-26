@@ -17,5 +17,8 @@ public interface NetworkTable<Key, Value> {
 
       /** @param key key that will be removed */
       void remove(Key key);
+
+      /** @return true if table is empty, false otherwise */
+      boolean isEmpty();
 }
 

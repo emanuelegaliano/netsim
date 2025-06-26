@@ -1,9 +1,13 @@
-package com.netsim.network;
+package com.netsim.network.server;
 
 import java.util.List;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.app.App;
+import com.netsim.network.Interface;
+import com.netsim.network.NetworkAdapter;
+import com.netsim.network.NetworkNode;
+import com.netsim.network.Node;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
@@ -31,7 +35,7 @@ public class Server<AppType extends App> extends NetworkNode {
       public void send(RoutingInfo route, ProtocolPipeline routingProtocols, byte[] data) 
       throws IllegalArgumentException {
             if(route == null || routingProtocols == null || data == null || data.length == 0)
-                  throw new IllegalArgumentException("Host: invalid  arguments");
+                  throw new IllegalArgumentException("Server: invalid  arguments");
 
             NetworkAdapter outAdapter = route.getDevice();
             NetworkAdapter remoteAdapter = outAdapter.getLinkedAdapter();
@@ -60,7 +64,7 @@ public class Server<AppType extends App> extends NetworkNode {
 
             if(hostIP) {
                   if(this.app == null)
-                        throw new RuntimeException("Host: no application setted");
+                        throw new RuntimeException("Server: no application setted");
 
                   IPv4 source = (IPv4) routingProtocols.extractSourceFrom(IPv4Protocol.class, data);
                   this.app.receive(source, routingProtocols.decapsulate(data));

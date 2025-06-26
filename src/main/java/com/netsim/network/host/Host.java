@@ -1,9 +1,13 @@
-package com.netsim.network;
+package com.netsim.network.host;
 
 import java.util.List;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.app.App;
+import com.netsim.network.Interface;
+import com.netsim.network.NetworkAdapter;
+import com.netsim.network.NetworkNode;
+import com.netsim.network.Node;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;

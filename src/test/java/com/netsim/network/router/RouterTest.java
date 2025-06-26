@@ -1,4 +1,4 @@
-package com.netsim.network;
+package com.netsim.network.router;
 
 import static org.junit.Assert.*;
 
@@ -11,6 +11,7 @@ import org.junit.Test;
 import com.netsim.addresses.Address;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
+import com.netsim.network.NetworkAdapter;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
@@ -19,6 +20,9 @@ import com.netsim.table.ArpTable;
 import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
 
+/**
+ * Tests for {@link Router}, covering argument validation and correct forwarding behavior.
+ */
 public class RouterTest {
     private IPv4 knownDest;
     private byte[] payload;
@@ -28,7 +32,7 @@ public class RouterTest {
 
     @Before
     public void setUp() {
-        // a “real” IPv4 we’ll use as the extracted destination
+        // a "real" IPv4 we’ll use as the extracted destination
         knownDest = new IPv4("10.0.0.42", 24);
         payload   = new byte[]{0x01,0x02,0x03};
 
@@ -36,10 +40,10 @@ public class RouterTest {
         NetworkAdapter dummyAdapter = new NetworkAdapter("eth0", 1500, Mac.broadcast());
         stubRoute = new RoutingInfo(dummyAdapter, knownDest);
 
-        // we never actually use arpTable in Router, so a fresh one is fine:
+        // an ARP table is not used in Router
         arpDummy = new ArpTable();
 
-        // stub‐out a simple DLL protocol so the pipeline constructor will accept it
+        // stub out a SimpleDLLProtocol for the pipeline
         final SimpleDLLProtocol dll = new SimpleDLLProtocol(Mac.broadcast(), Mac.broadcast());
         pipelineStub = new ProtocolPipeline(Collections.singletonList(dll)) {
             @Override
@@ -47,9 +51,8 @@ public class RouterTest {
                 // Router.send() only ever asks for SimpleDLLProtocol.class
                 assertEquals("Router should ask for exactly SimpleDLLProtocol",
                              SimpleDLLProtocol.class, clazz);
-                //noinspection unchecked
-                
-                return (T)dll;
+                // use Class.cast to avoid unchecked warning
+                return clazz.cast(dll);
             }
 
             @Override
@@ -63,7 +66,7 @@ public class RouterTest {
     }
 
     // ------------------------------------------------------
-    // send(...) argument‐validation
+    // send(...) argument-validation
     // ------------------------------------------------------
 
     @Test(expected = IllegalArgumentException.class)
@@ -85,7 +88,7 @@ public class RouterTest {
     }
 
     // ------------------------------------------------------
-    // receive(...) argument‐validation
+    // receive(...) argument-validation
     // ------------------------------------------------------
 
     @Test(expected = IllegalArgumentException.class)
@@ -107,7 +110,7 @@ public class RouterTest {
     }
 
     // ------------------------------------------------------
-    // receive(...) → when route exists, send(...) is invoked
+    // receive(...) -> known destination invokes send(...)
     // ------------------------------------------------------
 
     @Test
@@ -132,7 +135,7 @@ public class RouterTest {
     }
 
     // ------------------------------------------------------
-    // receive(...) → when lookup throws NPE, packet is dropped
+    // receive(...) -> lookup throws NPE, packet is dropped
     // ------------------------------------------------------
 
     @Test
@@ -175,7 +178,7 @@ public class RouterTest {
         };
     }
 
-    /** always throw NPE to simulate “no route” */
+    /** always throw NPE to simulate "no route" */
     private static RoutingTable rtThrowsNPE() {
         return new RoutingTable() {
             @Override

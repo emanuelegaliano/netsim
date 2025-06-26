@@ -1,4 +1,4 @@
-package com.netsim.network;
+package com.netsim.network.host;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.app.App;
+import com.netsim.network.Interface;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.table.ArpTable;
 import com.netsim.table.RoutingInfo;

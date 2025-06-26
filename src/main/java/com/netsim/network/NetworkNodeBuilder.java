@@ -18,11 +18,16 @@ import com.netsim.table.RoutingTable;
  * @param <T> the concrete NetworkNode type produced
  */
 public abstract class NetworkNodeBuilder<T extends NetworkNode> {
-
     protected String name;
-    protected final RoutingTable routingTable = new RoutingTable();
-    protected final ArpTable arpTable = new ArpTable();
-    protected final List<Interface> interfaces = new ArrayList<>();
+    protected final RoutingTable routingTable;
+    protected final ArpTable arpTable;
+    protected final List<Interface> interfaces;
+
+    protected NetworkNodeBuilder() {
+        this.routingTable = new RoutingTable();
+        this.arpTable = new ArpTable();
+        this.interfaces = new ArrayList<>();
+    }
 
     /**
      * Sets the node's name.
@@ -31,7 +36,7 @@ public abstract class NetworkNodeBuilder<T extends NetworkNode> {
      * @return this builder
      * @throws IllegalArgumentException if name is null
      */
-    public NetworkNodeBuilder<T> setName(String name) {
+    public NetworkNodeBuilder<T> setName(String name) throws IllegalArgumentException {
         if(name == null)
             throw new IllegalArgumentException(this.getClass().getSimpleName() + ": name cannot be null");
 
@@ -46,7 +51,7 @@ public abstract class NetworkNodeBuilder<T extends NetworkNode> {
      * @return this builder
      * @throws IllegalArgumentException if iface is null
      */
-    public NetworkNodeBuilder<T> addInterface(Interface iface) {
+    public NetworkNodeBuilder<T> addInterface(Interface iface) throws IllegalArgumentException {
         if(iface == null) 
             throw new IllegalArgumentException(this.getClass().getSimpleName() + ": iface cannot be null");
         
@@ -64,7 +69,7 @@ public abstract class NetworkNodeBuilder<T extends NetworkNode> {
      * @throws IllegalArgumentException if any argument is null, or if adapterName
      *                                  does not match any added Interface
      */
-    public NetworkNodeBuilder<T> addRoute(IPv4 subnet, String adapterName, IPv4 nextHop) {
+    public NetworkNodeBuilder<T> addRoute(IPv4 subnet, String adapterName, IPv4 nextHop) throws IllegalArgumentException {
         if(subnet == null || adapterName == null || nextHop == null) 
             throw new IllegalArgumentException(this.getClass().getSimpleName() + ": arguments cannot be null");
 
@@ -91,7 +96,7 @@ public abstract class NetworkNodeBuilder<T extends NetworkNode> {
      * @return this builder
      * @throws IllegalArgumentException if either argument is null
      */
-    public NetworkNodeBuilder<T> addArpEntry(IPv4 ip, Mac mac) {
+    public NetworkNodeBuilder<T> addArpEntry(IPv4 ip, Mac mac) throws IllegalArgumentException {
         if(ip == null || mac == null) 
             throw new IllegalArgumentException(this.getClass().getSimpleName() + ": arguments cannot be null");
         

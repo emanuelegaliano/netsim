@@ -1,8 +1,12 @@
-package com.netsim.network;
+package com.netsim.network.router;
 
 import java.util.List;
 
 import com.netsim.addresses.IPv4;
+import com.netsim.network.Interface;
+import com.netsim.network.NetworkAdapter;
+import com.netsim.network.NetworkNode;
+import com.netsim.network.Node;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
@@ -12,7 +16,6 @@ import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
 
 public class Router extends NetworkNode {
-
       public Router(String name, RoutingTable routingTable, ArpTable arpTable, List<Interface> interfaces) 
       throws IllegalArgumentException {
             super(name, routingTable, arpTable, interfaces);

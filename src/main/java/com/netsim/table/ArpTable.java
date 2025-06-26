@@ -98,4 +98,8 @@ public class ArpTable implements NetworkTable<IPv4, Mac> {
                 "ArpTable.remove: cannot remove IP " + key.stringRepresentation() + " (not present)"
             );
     }
+
+    public boolean isEmpty() {
+        return this.table.isEmpty();
+    }
 }

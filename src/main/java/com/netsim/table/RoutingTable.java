@@ -85,4 +85,8 @@ public class RoutingTable implements NetworkTable<IPv4, RoutingInfo> {
       public void clear() {
             this.table.clear();
       }
+
+      public boolean isEmpty() {
+            return this.table.isEmpty();
+      }
 }

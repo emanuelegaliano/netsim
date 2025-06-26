@@ -53,4 +53,8 @@ public class MacTable implements NetworkTable<Mac, NetworkAdapter> {
                         "MacTable: no network adapter associated with mac: " + address.stringRepresentation() 
                   );
       }
+
+      public boolean isEmpty() {
+            return this.table.isEmpty();
+      }
 }
