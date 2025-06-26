@@ -37,6 +37,30 @@ public class ProtocolPipelineBuilder {
       }
 
       /**
+       * This method creates a ProtocolPipelineBuilder object
+       * from an already existing pipeline. Must be first method 
+       * to be called when creating a protocol pipeline builder
+       * @param pipeline
+       * @return the builder
+       * @throws IllegalArgumentException if pipeline is null or one of pipeline protocols is null
+       * @throws RuntimeException if protocols is not empty
+       */
+      public ProtocolPipelineBuilder fromPipeline(ProtocolPipeline pipeline) 
+      throws IllegalArgumentException, RuntimeException {
+            if(pipeline == null)
+                  throw new IllegalArgumentException("ProtocolPipelineBuilder: pipeline cannot be null");
+            if(!this.protocols.isEmpty())
+                  throw new RuntimeException("ProtocolPipeline: protocols are not empty");
+            
+            for(final Protocol p : pipeline.getProtocols()) {
+                  // may throw IllegalArgumentException
+                  this.addProtocol(p);
+            }
+
+            return this;
+      }
+
+      /**
        * In order to use builder design pattern returns the pipeline
        * @return a new ProtocolPipeline with internal list of protocols
        */
