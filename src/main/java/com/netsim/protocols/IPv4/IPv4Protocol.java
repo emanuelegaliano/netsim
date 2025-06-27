@@ -346,4 +346,39 @@ public class IPv4Protocol implements Protocol {
             );
             return clone;
       }
+
+      /** @return the current TTL */
+      public int getTtl() {
+            return this.ttl;
+      }
+
+      /** @return the IHL (header length in 32-bit words) */
+      public int getIHL() {
+            return this.IHL;
+      }
+
+      /** @return the Type of Service field */
+      public int getTypeOfService() {
+            return this.typeOfService;
+      }
+
+      /** @return the Identification field */
+      public int getIdentification() {
+            return this.identification;
+      }
+
+      /** @return the Flags field */
+      public int getFlags() {
+            return this.flags;
+      }
+
+      /** @return the Protocol field */
+      public int getProtocol() {
+            return this.protocol;
+      }
+
+      /** @return the MTU value */
+      public int getMTU() {
+            return this.MTU;
+      }
 }

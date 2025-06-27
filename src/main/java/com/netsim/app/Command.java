@@ -1,18 +1,32 @@
 package com.netsim.app;
 
-import com.netsim.network.NetworkNode;
+public abstract class Command {
+      protected final String name;
+      protected App app;
 
-public interface Command {
+      protected Command(String name) {
+            if(name == null)
+                  throw new IllegalArgumentException(this.getClass().getSimpleName() + ": invalid argument");
+
+            this.name = name;
+            this.app = null;
+      }
+
+      public abstract void execute(String args);
       /**
-       * This method makes the Command able to execute 
-       * command using NetworkNode methods and attributes.
-       * @param node the network node
-       * @param args the arguments of the Command
-       */
-      void execute(App app, NetworkNode node, String[] args);
-      /**
-       * A costant help message description
+       * A constant help message description
        * @return short message description
        */
-      String help();
+      public abstract String help();
+      
+      public String name() {
+            return this.name;
+      }
+
+      public void setApp(App newApp) {
+            if(app == null)
+                  throw new IllegalArgumentException(this.getClass().getSimpleName() + ": app cannot be null");
+
+            this.app = newApp;
+      }
 }

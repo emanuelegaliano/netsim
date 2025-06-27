@@ -3,16 +3,16 @@ package com.netsim.network.router;
 import static org.junit.Assert.*;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.netsim.addresses.Address;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
+import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
-import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
 import com.netsim.protocols.SimpleDLL.SimpleDLLProtocol;
@@ -24,165 +24,142 @@ import com.netsim.table.RoutingTable;
  * Tests for {@link Router}, covering argument validation and correct forwarding behavior.
  */
 public class RouterTest {
-    private IPv4 knownDest;
-    private byte[] payload;
-    private RoutingInfo stubRoute;
+    private IPv4             knownDest;
+    private IPv4             knownSrc;
+    private byte[]           payload;
+    private RoutingInfo      stubRoute;
     private ProtocolPipeline pipelineStub;
-    private ArpTable arpDummy;
+    private List<Interface>  ifaces;
+    private ArpTable         arpDummy;
 
     @Before
     public void setUp() {
-        // a "real" IPv4 we’ll use as the extracted destination
         knownDest = new IPv4("10.0.0.42", 24);
-        payload   = new byte[]{0x01,0x02,0x03};
+        knownSrc  = new IPv4("10.0.0.1", 24);
+        payload   = new byte[]{0x01, 0x02, 0x03};
 
-        // build a real RoutingInfo (device + nextHop)
-        NetworkAdapter dummyAdapter = new NetworkAdapter("eth0", 1500, Mac.broadcast());
-        stubRoute = new RoutingInfo(dummyAdapter, knownDest);
+        NetworkAdapter adapter = new NetworkAdapter("eth0", 1500, Mac.broadcast());
+        Interface iface = new Interface(adapter, knownDest);
+        ifaces = Collections.singletonList(iface);
+        stubRoute = new RoutingInfo(adapter, knownDest);
+        arpDummy   = new ArpTable();
 
-        // an ARP table is not used in Router
-        arpDummy = new ArpTable();
-
-        // stub out a SimpleDLLProtocol for the pipeline
-        final SimpleDLLProtocol dll = new SimpleDLLProtocol(Mac.broadcast(), Mac.broadcast());
-        pipelineStub = new ProtocolPipeline(Collections.singletonList(dll)) {
-            @Override
-            public <T extends Protocol> T getProtocolByClass(Class<T> clazz) {
-                // Router.send() only ever asks for SimpleDLLProtocol.class
-                assertEquals("Router should ask for exactly SimpleDLLProtocol",
-                             SimpleDLLProtocol.class, clazz);
-                // use Class.cast to avoid unchecked warning
-                return clazz.cast(dll);
-            }
-
-            @Override
-            public <T extends Protocol> Address extractDestinationFrom(Class<T> clazz, byte[] raw) {
-                // Router.receive() only ever asks for IPv4Protocol.class
-                assertEquals("Router should ask for exactly IPv4Protocol",
-                             IPv4Protocol.class, clazz);
-                return knownDest;
-            }
+        IPv4Protocol stubIp = new IPv4Protocol(knownSrc, knownDest, 5, 0, 0, 0, 64, 0, 1500) {
+            @Override public IPv4 extractDestination(byte[] pdu) { return knownDest; }
+            @Override public IPv4 extractSource(byte[] pdu)      { return knownSrc; }
+            @Override public byte[] decapsulate(byte[] pdu)       { return pdu; }
         };
+        SimpleDLLProtocol stubDll = new SimpleDLLProtocol(Mac.broadcast(), Mac.broadcast()) {
+            @Override public byte[] decapsulate(byte[] frame) { return frame; }
+        };
+
+        pipelineStub = new ProtocolPipeline();
+        pipelineStub.push(stubIp);
+        pipelineStub.push(stubDll);
     }
 
-    // ------------------------------------------------------
-    // send(...) argument-validation
-    // ------------------------------------------------------
+    // send(...) argument validation
 
     @Test(expected = IllegalArgumentException.class)
-    public void send_nullRoute_throws() {
-        new Router("R", rtReturnsAny(), arpDummy, Collections.emptyList())
+    public void sendNullRouteThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
             .send(null, pipelineStub, payload);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void send_nullPipeline_throws() {
-        new Router("R", rtReturnsAny(), arpDummy, Collections.emptyList())
+    public void sendNullPipelineThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
             .send(stubRoute, null, payload);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void send_nullData_throws() {
-        new Router("R", rtReturnsAny(), arpDummy, Collections.emptyList())
+    public void sendNullDataThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
             .send(stubRoute, pipelineStub, null);
     }
 
-    // ------------------------------------------------------
-    // receive(...) argument-validation
-    // ------------------------------------------------------
+    @Test(expected = IllegalArgumentException.class)
+    public void sendEmptyDataThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
+            .send(stubRoute, pipelineStub, new byte[0]);
+    }
+
+    // receive(...) argument validation
 
     @Test(expected = IllegalArgumentException.class)
-    public void receive_nullPipeline_throws() {
-        new Router("R", rtReturnsAny(), arpDummy, Collections.emptyList())
+    public void receiveNullPipelineThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
             .receive(null, payload);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void receive_nullData_throws() {
-        new Router("R", rtReturnsAny(), arpDummy, Collections.emptyList())
+    public void receiveNullDataThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
             .receive(pipelineStub, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void receive_emptyData_throws() {
-        new Router("R", rtReturnsAny(), arpDummy, Collections.emptyList())
+    public void receiveEmptyDataThrows() {
+        new Router("R", rtReturnsAny(), arpDummy, ifaces)
             .receive(pipelineStub, new byte[0]);
     }
 
-    // ------------------------------------------------------
-    // receive(...) -> known destination invokes send(...)
-    // ------------------------------------------------------
+    // receive(...) → known destination invokes send(...)
 
     @Test
-    public void receive_knownDestination_invokesSend() {
-        final AtomicBoolean sendCalled = new AtomicBoolean(false);
-        Router r = new Router("R", rtReturns(stubRoute), arpDummy, Collections.emptyList()) {
+    public void receiveKnownDestinationInvokesSend() {
+        AtomicBoolean called = new AtomicBoolean(false);
+        Router r = new Router("R", rtReturns(stubRoute), arpDummy, ifaces) {
             @Override
-            public void send(RoutingInfo route, ProtocolPipeline protos, byte[] data) {
-                sendCalled.set(true);
-                assertSame("route passed through should be exactly stubRoute",
-                           stubRoute, route);
-                assertSame("pipeline passed through should be exactly our stub",
-                           pipelineStub, protos);
-                assertArrayEquals("payload should be passed unchanged",
-                                  payload, data);
+            public void send(RoutingInfo route, ProtocolPipeline stack, byte[] data) {
+                called.set(true);
+                assertSame("route should be stubRoute", stubRoute, route);
+                assertSame("pipeline should be pipelineStub", pipelineStub, stack);
+                assertArrayEquals("payload should be unchanged", payload, data);
             }
         };
 
         r.receive(pipelineStub, payload);
-        assertTrue("Router.receive must call send(...) when lookup succeeds",
-                   sendCalled.get());
+        assertTrue("send(...) must be invoked for known destination", called.get());
     }
 
-    // ------------------------------------------------------
-    // receive(...) -> lookup throws NPE, packet is dropped
-    // ------------------------------------------------------
+    // receive(...) → lookup throws NPE, packet dropped silently
 
     @Test
-    public void receive_unknownDestination_dropsSilently() {
-        final AtomicBoolean sendCalled = new AtomicBoolean(false);
-        Router r = new Router("R", rtThrowsNPE(), arpDummy, Collections.emptyList()) {
+    public void receiveUnknownDestinationDropsSilently() {
+        AtomicBoolean called = new AtomicBoolean(false);
+        Router r = new Router("R", rtThrowsNpe(), arpDummy, ifaces) {
             @Override
-            public void send(RoutingInfo route, ProtocolPipeline protos, byte[] data) {
-                sendCalled.set(true);
+            public void send(RoutingInfo route, ProtocolPipeline stack, byte[] data) {
+                called.set(true);
             }
         };
 
-        // should not throw, and send() should never be invoked
         r.receive(pipelineStub, payload);
-        assertFalse("Router.receive should not call send(...) when lookup throws",
-                    sendCalled.get());
+        assertFalse("send(...) should not be invoked when no route", called.get());
     }
 
-    // ------------------------------------------------------
-    // helper RoutingTable stubs
-    // ------------------------------------------------------
+    // helper stubs
 
-    /** never used by send(), so throws if called */
     private static RoutingTable rtReturnsAny() {
         return new RoutingTable() {
-            @Override
-            public RoutingInfo lookup(IPv4 dest) {
-                throw new AssertionError("should not be called in this test");
+            @Override public RoutingInfo lookup(IPv4 dest) {
+                throw new AssertionError("lookup should not be called");
             }
         };
     }
 
-    /** always return the given RoutingInfo */
     private static RoutingTable rtReturns(final RoutingInfo info) {
         return new RoutingTable() {
-            @Override
-            public RoutingInfo lookup(IPv4 dest) {
+            @Override public RoutingInfo lookup(IPv4 dest) {
                 return info;
             }
         };
     }
 
-    /** always throw NPE to simulate "no route" */
-    private static RoutingTable rtThrowsNPE() {
+    private static RoutingTable rtThrowsNpe() {
         return new RoutingTable() {
-            @Override
-            public RoutingInfo lookup(IPv4 dest) {
+            @Override public RoutingInfo lookup(IPv4 dest) {
                 throw new NullPointerException("no route");
             }
         };

@@ -1,13 +1,12 @@
 package com.netsim.network;
 
-import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.netsim.addresses.Address;
 import com.netsim.addresses.Mac;
 import com.netsim.networkstack.Protocol;
+import com.netsim.networkstack.ProtocolPipeline;
+import com.netsim.protocols.SimpleDLL.SimpleDLLProtocol;
 
 public final class NetworkAdapter {
       private final String name;
@@ -17,8 +16,7 @@ public final class NetworkAdapter {
       private Node owner; // owner because
       private boolean isUp;
 
-      private List<byte[]> outGoingFrames;
-      private List<byte[]> inGoingFrames;
+      private List<byte[]> bufferFrames;
 
 
       /**
@@ -42,8 +40,7 @@ public final class NetworkAdapter {
             // settings
             this.isUp = true;
 
-            this.outGoingFrames = new LinkedList<>();
-            this.inGoingFrames = new LinkedList<>();
+            this.bufferFrames = new LinkedList<>();
       }
 
       /**
@@ -128,108 +125,75 @@ public final class NetworkAdapter {
             this.isUp = false;
       }
 
-      
       /**
-       * Collects a fragmented byte array of frames, checking if
-       * destination is remote adapter one.
-       * @param dllProtocol the protocol used to encapsulate the frames
-       * @param frames 
-       * @throws IllegalArgumentException if any of the arguments is invalid
-       * @throws RuntimeException if adapter is down,
-       *                          if dll protocol did not extract Mac address, 
-       *                          if adapter is empty after function call
+       * Called by a Node’s send(...) sequence to hand this adapter
+       * raw payloads (e.g. IP datagrams) ready for framing.
        */
-      public void collectFrames(Protocol dllProtocol, byte[] frames) 
-      throws IllegalArgumentException, RuntimeException {
-            if(dllProtocol == null || frames == null || frames.length == 0) 
-                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments");
-            if(!this.isUp) 
+      public void collectFrames(byte[] payload) {
+            if(payload == null || payload.length == 0)
+                  throw new IllegalArgumentException("NetworkAdapter: payload cannot be null or empty");
+            this.bufferFrames.add(payload);
+      }
+
+      /**
+       * Encapsulate each payload in a DLL frame (using the given
+       * SimpleDLLProtocol), then fire it across the “wire” to the
+       * linked adapter’s receive(...).
+       *
+       * @param dllProto a SimpleDLLProtocol configured with src/dst MAC
+       * @param pipeline the full protocol pipeline (for higher‐layer chaining)
+       */
+      public void sendFrames(SimpleDLLProtocol dllProto, ProtocolPipeline pipeline) {
+            if(dllProto == null || pipeline == null)
+                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments to sendFrames");
+            if(!this.isUp())
                   throw new RuntimeException("NetworkAdapter: adapter is down");
 
-            int offset = 0;
-            while(offset < frames.length) {
-                  int remain = frames.length - offset;
-                  int frameLen = Math.min(this.MTU, remain);
-                  byte[] single = Arrays.copyOfRange(frames, offset, offset+frameLen);
-                  offset += frameLen;
+            // for each buffered payload, frame + deliver
+            for(byte[] payload : this.bufferFrames) {
+                  // build raw frame
+                  byte[] frame = dllProto.encapsulate(payload);
+                  // deliver to remote side
+                  this.getLinkedAdapter().receive(pipeline, frame);
+            }
+            this.bufferFrames.clear();
+      }
 
-                  Address maybeDest = dllProtocol.extractDestination(single);
-                  if(!(maybeDest instanceof Mac))
-                        throw new RuntimeException("NetworkAdapter: dllProtocol did not extract a Mac");
+      /**
+       * Called by the “wire” when a raw DLL frame arrives.
+       * Pops the DLL protocol off the pipeline, checks destination MAC,
+       * decapsulates, buffers payload, and notifies the owning Node.
+       *
+       * @param pipeline full protocol pipeline, with DLL at top
+       * @param frame raw frame bytes
+       */
+      public void receive(ProtocolPipeline pipeline, byte[] frame) {
+            if(pipeline == null || frame == null || frame.length == 0)
+                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments to receive");
+            if(!this.isUp())
+                  return;  // drop silently if down
 
-                  Mac destMac = (Mac) maybeDest;
-                  Mac peerMac = this.remote.getMacAddress();
-                  if(destMac.equals(peerMac) 
-                  || destMac.equals(Mac.broadcast()))
-                        this.outGoingFrames.add(single);
+            // 1) pop off the DLL protocol
+            Protocol top = pipeline.pop();
+            if(!(top instanceof SimpleDLLProtocol))
+                  throw new RuntimeException("NetworkAdapter: expected DLL protocol");
+            SimpleDLLProtocol dll = (SimpleDLLProtocol) top;
+
+            // 2) extract destination MAC
+            Mac dest = dll.extractDestination(frame);
+            if(!this.macAddress.equals(dest)) {
+                  // not for me, ignore
+                  return;
             }
 
-            if(this.outGoingFrames.isEmpty())
-                  throw new RuntimeException("NetworkAdapter: no frames collected");
-      }
+            // 3) decapsulate one level
+            byte[] payload = dll.decapsulate(frame);
 
-      /**
-       * Returns what's inside the inGoingFrames buffer of
-       * adapter.
-       * @param dllProtocol the protocol to use in order to remove header from frames
-       * @return byte array of inGoingFrames buffer without dllProtocol header
-       * @throws IllegalArgumentException if dllProtocol is null
-       * @throws RuntimeException if inGoingFrames buffer is empty
-       */
-      public byte[] releaseFrames(Protocol dllProtocol) throws IllegalArgumentException, RuntimeException {
-            if(dllProtocol == null)
-                  throw new IllegalArgumentException("NetworkAdapter: dllProtocol cannot be null");
-            if(this.inGoingFrames.isEmpty())
-                  throw new RuntimeException("NetworkAdapter: adapter in buffer is empty");
+            // 4) buffer stripped payload for higher layers
+            this.bufferFrames.add(payload);
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            for(byte[] frame : inGoingFrames)
-                  out.write(frame, 0, frame.length);
-            
-            this.inGoingFrames.clear();
-            return dllProtocol.decapsulate(out.toByteArray());
-      }
-
-      /**
-       * receive a frame and add it to internal buffer (inGoingFrames) if it's valid
-       * @param frame the frame
-       * @throws IllegalArgumentException if either frame is null or is empty
-       * @throws RuntimeException if adapter is down
-       */
-      public void receiveFrame(Protocol framingProtocol, byte[] frame) {
-            if(framingProtocol == null || frame == null) 
-                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments");
-            if(!this.isUp)
-                  throw new RuntimeException("NetworkAdapter: adapter is down");
-
-            Address dstAddr = framingProtocol.extractDestination(frame);
-            if(!(dstAddr instanceof Mac))
-                  throw new RuntimeException("networkAdapter: framing protocol does not extract Mac");
-
-            Mac dst = (Mac) dstAddr;
-            if(dst.equals(this.macAddress) || dst.equals(Mac.broadcast())) 
-                  this.inGoingFrames.add(frame);
-      }
-
-      /**
-       * send a frame from internal buffer (outGoingFrames) to other adapter
-       * @param frame the frame
-       * @throws IllegalArgumentException if other adapter is null
-       * @throws RuntimeException if adapter is down
-       *                          if internal buffer(outGoingFrames) is null
-       */
-      public void sendFrames(Protocol framingProtocol) throws IllegalArgumentException, RuntimeException {
-            if(this.remote == null)
-                  throw new IllegalArgumentException("NetworkAdapter: other adapter cannot be null");
-            if(!this.isUp)
-                  throw new RuntimeException("NetworkAdapter: adapter is down");
-            if(this.outGoingFrames.isEmpty())
-                  throw new RuntimeException("NetworkAdapter: adapter out buffer is empty");
-
-            for(byte[] frame : this.outGoingFrames)
-                  this.remote.receiveFrame(framingProtocol, frame);
-
-            this.outGoingFrames.clear();
+            // 5) notify owning node
+            this.getNode().receive(pipeline, payload);
       }
 
       @Override
