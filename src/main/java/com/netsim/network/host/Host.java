@@ -2,18 +2,16 @@ package com.netsim.network.host;
 
 import java.util.List;
 
+import com.netsim.addresses.IPv4;
 import com.netsim.app.App;
-import com.netsim.addresses.Mac;
 import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
 import com.netsim.network.NetworkNode;
-import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
-import com.netsim.protocols.SimpleDLL.SimpleDLLProtocol;
 import com.netsim.table.ArpTable;
 import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
+import com.netsim.utils.Logger;
 
 /**
  * A Host node that runs a single App, and sends/receives
@@ -64,27 +62,38 @@ public class Host extends NetworkNode {
        * Sends application data over the network stack:
        * encapsulate in IP→DLL, frame it, and rely on adapter to deliver.
        *
-       * @param route    non-null next-hop routing info
+       * @param destination non-null destination
        * @param stack    non-null protocol pipeline (IP then above)
        * @param data     non-null, non-empty application payload
        * @throws IllegalArgumentException if any argument is invalid
        */
-      public void send(RoutingInfo route,ProtocolPipeline stack,byte[] data) {
-            if(route==null||stack==null||data==null||data.length==0)
+      public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
+            if(destination == null || stack == null || data == null || data.length == 0)
                   throw new IllegalArgumentException("Host: invalid arguments");
 
-            // determine source/destination MACs
-            NetworkAdapter out = route.getDevice();
-            Interface iface = this.getInterface(out);
-            Mac src = iface.getAdapter().getMacAddress();
-            Mac dst   = out.getLinkedAdapter().getMacAddress();
+            RoutingInfo route;
+            try {
+                  route = this.getRoute(destination);
+            } catch(final RuntimeException e) {
+                  Logger logger = Logger.getInstance();
+                  logger.error("Invalid IP");
+                  logger.debug(e.getLocalizedMessage());
+                  return;
+            }
 
-            // buffer the IP datagram
-            out.collectFrames(data);
+            stack.push(new IPv4Protocol(
+                  this.getInterface(route.getDevice()).getIP(), 
+                  destination, 
+                  5,
+                  0,
+                  0,
+                  0,
+                  64, // not implemented yet, maybe in future
+                  0,
+                  this.getMTU()
+                  ));
 
-            // frame and send via DLL
-            SimpleDLLProtocol dll = new SimpleDLLProtocol(src,dst);
-            out.sendFrames(dll,stack);
+            route.getDevice().send(stack, data);
       }
 
       /**
@@ -100,24 +109,7 @@ public class Host extends NetworkNode {
             if(stack==null||frame==null||frame.length==0)
                   throw new IllegalArgumentException("Host: invalid arguments");
 
-            if(this.runningApp==null)
+            if(this.runningApp == null)
                   throw new RuntimeException("Host: no application set");
-
-            // strip DLL layer
-            Protocol rawDll = stack.pop();
-            if(!(rawDll instanceof SimpleDLLProtocol))
-                  throw new IllegalArgumentException("Host: expected DLL protocol");
-            byte[] afterDll = ((SimpleDLLProtocol)rawDll).decapsulate(frame);
-
-            // strip IP layer
-            Protocol rawIp = stack.pop();
-            if(!(rawIp instanceof IPv4Protocol))
-                  throw new IllegalArgumentException("Host: expected IPv4Protocol");
-            IPv4Protocol ip = (IPv4Protocol)rawIp;
-
-            byte[] appData = ip.decapsulate(afterDll);
-
-            // deliver to application
-            this.runningApp.receive(appData);
       }
 }

@@ -1,19 +1,15 @@
 package com.netsim.network;
 
+import com.netsim.addresses.IPv4;
 import com.netsim.networkstack.ProtocolPipeline;
-import com.netsim.table.RoutingInfo;
 
 public interface Node {
       /**
-       * Sends a block of data over the network. 
-       * The data will be encapsulated by the supplied {@code protocols}
-       * handed to the networrk adapter indicate by {@code route.getDevice()}
-       * and forwarded toward the next hop given by {@code route.getNextHop()}.
-       * @param route the routing information (adapter + nextHop address)
+       * @param destination IPv4 destination
        * @param protocols the protocol pipeline to apply (e.g. UDP + IP + framing)
        * @param data the payload bytes to send (must be non-null and non-empty)
        */
-      public void send(RoutingInfo route, ProtocolPipeline protocols, byte[] data);
+      public void send(IPv4 destination, ProtocolPipeline protocols, byte[] data);
 
       /**
        * Receives a bloc of raw bytes from the network and delivers it up the

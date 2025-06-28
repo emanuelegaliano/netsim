@@ -2,6 +2,8 @@ package com.netsim.protocols.MSG;
 
 import com.netsim.networkstack.Protocol;
 import com.netsim.addresses.Address;
+import com.netsim.addresses.Port;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -15,6 +17,7 @@ import java.util.Objects;
 public class MSGProtocol implements Protocol {
     public final static int port = 9696;
     private final String name;
+    private final int maxHeaderLength = 20; // maximum length for name (header)
     private Protocol nextProtocol;
     private Protocol previousProtocol;
 
@@ -22,13 +25,15 @@ public class MSGProtocol implements Protocol {
      * @param name the ASCII name to use as header (non-null)
      */
     public MSGProtocol(String name) {
-        if (name == null) {
+        if(name == null) 
             throw new IllegalArgumentException("MSGProtocol: name cannot be null");
-        }
+        if(name.length() > maxHeaderLength)
+            throw new RuntimeException("MSGProtocol: name is too long");
+        
         this.name = name;
     }
 
-    /** encapsulates everything in a MSGHEader and pass it to the next protocol */
+    /** encapsulates everything in a MSGHeader and pass it to the next protocol */
     public byte[] encapsulate(byte[] upperLayerPDU) {
         if(upperLayerPDU == null || upperLayerPDU.length == 0) 
             throw new IllegalArgumentException("MSGProtocol: payload cannot be null or empty");
@@ -100,6 +105,10 @@ public class MSGProtocol implements Protocol {
 
     public Address extractDestination(byte[] pdu) {
         return null;  // not applicable
+    }
+
+    public static Port port() {
+        return new Port("9696");
     }
 
     @Override

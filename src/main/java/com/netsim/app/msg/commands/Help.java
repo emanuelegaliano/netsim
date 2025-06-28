@@ -3,6 +3,7 @@ package com.netsim.app.msg.commands;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.netsim.app.App;
 import com.netsim.app.Command;
 import com.netsim.app.msg.MsgCommandFactory;
 
@@ -11,7 +12,7 @@ public class Help extends Command {
             super("help");
       }
 
-      public void execute(String args) {
+      public void execute(App app, String args) {
             if(args != "")
                   throw new IllegalArgumentException("HelpCommand: expected no parameters");
 
@@ -23,7 +24,7 @@ public class Help extends Command {
                   helpMsg += cmd.name() + ": " + cmd.help() + "\n";
             }
 
-            this.app.printAppMessage(helpMsg);
+            app.printAppMessage(helpMsg);
       }
 
       private List<String> generateCommands() {

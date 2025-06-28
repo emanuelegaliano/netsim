@@ -1,9 +1,11 @@
 package com.netsim.network;
 
 import java.util.List;
+import java.util.Random;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
+import com.netsim.addresses.Port;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
@@ -57,8 +59,11 @@ public abstract class NetworkNode implements Node {
         return this.interfaces;
     }
 
-    /** query the routing table for next‐hop info */
-    public RoutingInfo getRoute(IPv4 destination) {
+    /** query the routing table for next‐hop info
+     * @param destination key used in the routing table
+     * @throws RuntimException if no entry has destination as key
+    */
+    public RoutingInfo getRoute(IPv4 destination) throws RuntimeException {
         try {
             return this.routingTable.lookup(destination);
         } catch (NullPointerException e) {
@@ -66,8 +71,12 @@ public abstract class NetworkNode implements Node {
         }
     }
 
-    /** query ARP table for a directly‐connected MAC */
-    public Mac getMac(IPv4 ip) {
+    /** 
+     * query ARP table for a directly‐connected MAC 
+     * @param ip key used in arpTable
+     * @throws RuntimException if no entry has ip as key
+     * */
+    public Mac getMac(IPv4 ip) throws RuntimeException {
         try {
             return this.arpTable.lookup(ip);
         } catch (NullPointerException e) {
@@ -104,11 +113,20 @@ public abstract class NetworkNode implements Node {
         
         return (mtu == Integer.MAX_VALUE ? 0 : mtu);
     }
+    /**
+     * Generates a random valid port in the range [1024…0xFFFF].
+     *
+     * @return a newly‐constructed Port with a random port number
+     */
+    public Port randomPort() {
+        Random rnd = new Random();
+        int min = 1024;
+        int max = 0xFFFF;
+        Integer portNumber = rnd.nextInt(max-min+1)+min;
+        return new Port(portNumber.toString());
 
-    public int randomPort() {
-        return new java.util.Random().nextInt(0xFFFF - 1024 + 1) + 1024;
     }
     
-    public abstract void send(RoutingInfo route, ProtocolPipeline protocols, byte[] data);
+    public abstract void send(IPv4 destination, ProtocolPipeline protocols, byte[] data);
     public abstract void receive(ProtocolPipeline protocols, byte[] data);
 }

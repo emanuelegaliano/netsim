@@ -1,6 +1,8 @@
 package com.netsim.app;
 
+import com.netsim.addresses.IPv4;
 import com.netsim.network.NetworkNode;
+import com.netsim.networkstack.ProtocolPipeline;
 
 public abstract class App {
       protected final String name;
@@ -19,7 +21,7 @@ public abstract class App {
        * @throws IllegalArgumentException if either name or usage is null
        */
       protected App(String name, String usage, CommandFactory factory, NetworkNode node) throws IllegalArgumentException {
-            if(name == null || usage == null || factory == null)
+            if(name == null || usage == null || factory == null) 
                   throw new IllegalArgumentException(this.getClass().getSimpleName() + ": name or usage cannot be null");
 
             this.name = name;
@@ -36,7 +38,9 @@ public abstract class App {
       }
       
       public abstract void start(NetworkNode node);
+      public abstract void send(ProtocolPipeline stack, byte[] data);
       public abstract void receive(byte[] data);
+      public abstract IPv4 getDestination();
 
       /**
        * Prints some message in System.out
@@ -49,5 +53,10 @@ public abstract class App {
       /** @return names of the App */
       public String getName() {
             return this.name;
+      }
+
+      /** @return current User's username */
+      public String getUsername() {
+            return this.username;
       }
 }
