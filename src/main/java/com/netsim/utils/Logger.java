@@ -32,7 +32,6 @@ public class Logger {
 
             if(input == null) {
                 System.err.println("Unable to load application properties");
-                instance = null;
             } else {
                 props.load(input);
             }                 

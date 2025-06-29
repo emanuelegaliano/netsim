@@ -1,6 +1,7 @@
 package com.netsim.table;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.netsim.addresses.IPv4;
 
@@ -16,15 +17,33 @@ public class RoutingTable implements NetworkTable<IPv4, RoutingInfo> {
        * @throws IllegalArgumentException if destination is null
        * @throws NullPointerException if destination is not found 
        */
-      public RoutingInfo lookup(IPv4 destination) throws IllegalArgumentException, NullPointerException {
+      public RoutingInfo lookup(IPv4 destination) {
             if(destination == null)
                   throw new IllegalArgumentException("RoutingTable: destination cannot be null");
 
-            RoutingInfo ri = this.table.get(destination);
-            if(ri == null)
-                  throw new NullPointerException("RoutingTable: route not found");
-                  
-            return ri;
+            RoutingInfo bestMatch = null;
+            int bestPrefix   = -1;
+
+            // table è una Map<IPv4,RoutingInfo> dove la chiave IPv4 rappresenta il network address + mask
+            for(Map.Entry<IPv4,RoutingInfo> e : this.table.entrySet()) {
+                  IPv4 subnet = e.getKey();
+                  int prefix  = subnet.getMask();
+
+                  // isInSubnet prende come stringa "networkAddress" e il prefix
+                  if(destination.isInSubnet(subnet.stringRepresentation(), prefix)) {
+                        if(prefix > bestPrefix) {
+                        bestPrefix   = prefix;
+                        bestMatch    = e.getValue();
+                        }
+                  }
+            }
+
+            if(bestMatch == null)
+                  throw new NullPointerException(
+                        "RoutingTable: no route found for " + destination.stringRepresentation()
+                  );
+
+            return bestMatch;
       }
 
       /**

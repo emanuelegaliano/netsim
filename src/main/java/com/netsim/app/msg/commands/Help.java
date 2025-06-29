@@ -13,7 +13,7 @@ public class Help extends Command {
       }
 
       public void execute(App app, String args) {
-            if(args != "")
+            if(!args.equals(""))
                   throw new IllegalArgumentException("HelpCommand: expected no parameters");
 
             String helpMsg = "List of commands\n";
@@ -30,6 +30,7 @@ public class Help extends Command {
       private List<String> generateCommands() {
             final List<String> commands = new LinkedList<>();
             commands.add("help");
+            commands.add("send");
 
             return commands;
       }

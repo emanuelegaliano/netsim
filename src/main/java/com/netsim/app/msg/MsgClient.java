@@ -3,14 +3,9 @@ package com.netsim.app.msg;
 import java.util.Scanner;
 
 import com.netsim.addresses.IPv4;
-import com.netsim.addresses.Mac;
 import com.netsim.app.App;
 import com.netsim.app.Command;
-import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
 import com.netsim.network.NetworkNode;
-import com.netsim.network.host.Host;
-import com.netsim.network.host.HostBuilder;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.MSG.MSGProtocol;
@@ -65,6 +60,8 @@ public class MsgClient extends App {
                         this.printAppMessage(e.getLocalizedMessage());
                   }
             }
+
+            this.input.close();
       }
 
       public void receive(ProtocolPipeline stack, byte[] data) {
@@ -110,27 +107,5 @@ public class MsgClient extends App {
             byte[] encapsulated = protocol.encapsulate(data);
             stack.push(protocol);
             this.owner.send(serverIP, stack, encapsulated);
-      }
-
-      public static void main(String[] args) {
-            Host test = new HostBuilder()
-            .addInterface(
-                  new Interface(
-                        new NetworkAdapter(
-                              "d", 
-                              1500,
-                              new Mac("AA:BB:CC:DD:EE:FF")
-                        ),
-                  new IPv4("192.168.11", 24)
-                  )
-            )
-            .build();
-
-
-            MsgClient app = new MsgClient(
-                  test, 
-                  new IPv4("192.168.1.1", 24)
-                  );
-            app.start();
       }
 }

@@ -1,4 +1,4 @@
-package com.netsim.network.ruoter;
+package com.netsim.network.router;
 
 import com.netsim.network.NetworkNodeBuilder;
 

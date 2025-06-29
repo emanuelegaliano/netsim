@@ -13,8 +13,8 @@ public class RoutingInfo {
        * @throws IllegalArgumentException if device is null
        */
       public RoutingInfo(NetworkAdapter device, IPv4 nextHop) throws IllegalArgumentException {
-            if(device == null || nextHop == null)
-                  throw new IllegalArgumentException("RoutingInfo: device and nextHop cannot be null");
+            if(device == null)
+                  throw new IllegalArgumentException("RoutingInfo: device cannot be null");
 
             this.device = device;
             this.nextHop = nextHop;
@@ -43,7 +43,7 @@ public class RoutingInfo {
        */
       public void setDevice(NetworkAdapter newDevice) throws IllegalArgumentException {
             if(newDevice == null)
-                  throw new IllegalArgumentException("RoutingInfo: newNextHop cannot be null");
+                  throw new IllegalArgumentException("RoutingInfo: newDevice cannot be null");
 
             this.device = newDevice;
       }

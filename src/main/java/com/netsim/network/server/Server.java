@@ -40,7 +40,7 @@ public class Server<AppType extends App> extends NetworkNode {
 
       public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
             if(destination == null || stack == null || data == null || data.length == 0)
-                  throw new IllegalArgumentException("Host: invalid arguments");
+                  throw new IllegalArgumentException("Server: invalid arguments");
 
             RoutingInfo route;
             try {

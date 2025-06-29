@@ -1,4 +1,4 @@
-package com.netsim.network.ruoter;
+package com.netsim.network.router;
 
 import java.util.List;
 

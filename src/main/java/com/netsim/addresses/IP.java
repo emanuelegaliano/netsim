@@ -117,7 +117,9 @@ public abstract class IP extends Address {
             return false;
 
         IP other = (IP)obj;
-        return other == this && other.getMask() == this.getMask();
+        return Arrays.equals(this.byteRepresentation(), other.byteRepresentation())
+                && this.getMask() == other.getMask();
+
     }
 
     @Override
