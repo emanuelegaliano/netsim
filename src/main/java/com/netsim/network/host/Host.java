@@ -6,6 +6,7 @@ import com.netsim.addresses.IPv4;
 import com.netsim.app.App;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkNode;
+import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
 import com.netsim.table.ArpTable;
@@ -32,7 +33,7 @@ public class Host extends NetworkNode {
        */
       public Host(String name, RoutingTable routingTable, ArpTable arpTable,List<Interface> interfaces) 
       throws IllegalArgumentException {
-            super(name,routingTable,arpTable,interfaces);
+            super(name, routingTable, arpTable, interfaces);
             this.runningApp = null;
       }
 
@@ -43,7 +44,8 @@ public class Host extends NetworkNode {
        * @throws IllegalArgumentException if newApp is null
        */
       public void setApp(App newApp) {
-            if(newApp==null) throw new IllegalArgumentException("Host: app cannot be null");
+            if(newApp == null) 
+                  throw new IllegalArgumentException("Host: app cannot be null");
             this.runningApp = newApp;
       }
 
@@ -52,10 +54,20 @@ public class Host extends NetworkNode {
        *
        * @throws IllegalArgumentException if no App has been set
        */
-      public void runApp() {
-            if(this.runningApp==null) 
+      public void runApp() throws IllegalArgumentException {
+            if(this.runningApp == null) 
                   throw new IllegalArgumentException("Host: no App set");
-            this.runningApp.start(this);
+            this.runningApp.start();
+      }
+
+      public boolean isForMe(IPv4 destination) {
+            try {
+                  this.getInterface(destination);
+                  return true;
+            } catch(final RuntimeException e) {
+                  Logger.getInstance().debug(e.getLocalizedMessage());
+                  return false;
+            }
       }
 
       /**
@@ -81,7 +93,7 @@ public class Host extends NetworkNode {
                   return;
             }
 
-            stack.push(new IPv4Protocol(
+            IPv4Protocol ipProto = new IPv4Protocol(
                   this.getInterface(route.getDevice()).getIP(), 
                   destination, 
                   5,
@@ -91,9 +103,11 @@ public class Host extends NetworkNode {
                   64, // not implemented yet, maybe in future
                   0,
                   this.getMTU()
-                  ));
+            );
 
-            route.getDevice().send(stack, data);
+            byte[] encapsulated = ipProto.encapsulate(data);
+            stack.push(ipProto);
+            route.getDevice().send(stack, encapsulated);
       }
 
       /**
@@ -105,11 +119,28 @@ public class Host extends NetworkNode {
        * @throws IllegalArgumentException if any argument is invalid
        * @throws RuntimeException         if no App has been set
        */
-      public void receive(ProtocolPipeline stack,byte[] frame) {
-            if(stack==null||frame==null||frame.length==0)
+      public void receive(ProtocolPipeline stack, byte[] packets) {
+            if(stack == null || packets == null ||  packets.length == 0)
                   throw new IllegalArgumentException("Host: invalid arguments");
 
             if(this.runningApp == null)
                   throw new RuntimeException("Host: no application set");
+
+            Protocol p = stack.pop();
+            if(!(p instanceof IPv4Protocol))
+                  throw new RuntimeException("Host: expected IPv4 protocol");
+
+            IPv4Protocol ipProtocol = (IPv4Protocol) p;
+            IPv4 destination = ipProtocol.extractDestination(packets);
+
+            // checking if an interface with destination IP exist
+            if(!this.isForMe(destination)) {
+                  Logger logger = Logger.getInstance();
+                  logger.error("Packet not for Host " + this.name);
+                  return;
+            }
+
+            byte[] transport = ipProtocol.decapsulate(packets);
+            this.runningApp.receive(stack, transport);
       }
 }

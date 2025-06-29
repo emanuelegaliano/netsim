@@ -38,7 +38,7 @@ public abstract class NetworkNode implements Node {
     }
 
     /** look up the Interface owning the given IP */
-    public Interface getInterface(IPv4 ip) {
+    public Interface getInterface(IPv4 ip) throws RuntimeException {
         for(Interface iface : this.interfaces) {
             if(iface.getIP().equals(ip))
                 return iface;
@@ -46,8 +46,12 @@ public abstract class NetworkNode implements Node {
         throw new RuntimeException("Interface for IP " + ip.stringRepresentation() + " not found");
     }
 
-    /** look up the Interface owning the given adapter */
-    public Interface getInterface(NetworkAdapter adapter) {
+    /** 
+     * look up the Interface owning the given adapter 
+     * @param adapter as key
+     * @throws RuntimeException if not found
+     * */
+    public Interface getInterface(NetworkAdapter adapter) throws RuntimeException {
         for(Interface iface : this.interfaces) {
             if(iface.getAdapter().equals(adapter)) 
                 return iface;
@@ -61,7 +65,7 @@ public abstract class NetworkNode implements Node {
 
     /** query the routing table for next‐hop info
      * @param destination key used in the routing table
-     * @throws RuntimException if no entry has destination as key
+     * @throws RuntimeException if no entry has destination as key
     */
     public RoutingInfo getRoute(IPv4 destination) throws RuntimeException {
         try {

@@ -2,8 +2,7 @@ package com.netsim.app.msg;
 
 import com.netsim.app.Command;
 import com.netsim.app.CommandFactory;
-import com.netsim.app.msg.commands.Connect;
-import com.netsim.app.msg.commands.Help;
+import com.netsim.app.msg.commands.*;
 
 public class MsgCommandFactory implements CommandFactory {
       /**
@@ -13,8 +12,8 @@ public class MsgCommandFactory implements CommandFactory {
             switch(cmd.toLowerCase()) {
                   case "help":
                         return new Help();
-                  case "connect":
-                        return new Connect();
+                  case "send":
+                        return new Send();
                   default:
                         throw new IllegalArgumentException("CommandFactory: no command found");
             }

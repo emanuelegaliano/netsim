@@ -1,8 +1,11 @@
 package com.netsim.network;
 
+import com.netsim.addresses.Address;
 import com.netsim.addresses.Mac;
+import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.SimpleDLL.SimpleDLLProtocol;
+import com.netsim.utils.Logger;
 
 /**
  * Represents a point-to-point network adapter.
@@ -118,20 +121,20 @@ public final class NetworkAdapter {
        * @throws IllegalArgumentException if frame is null or empty
        * @throws RuntimeException if adapter is down or not linked
        */
-      public void send(ProtocolPipeline stack, byte[] frame) {
-            if(frame == null || frame.length == 0)
-                  throw new IllegalArgumentException("NetworkAdapter: frame cannot be null or empty");
+      public void send(ProtocolPipeline stack, byte[] frame) throws IllegalArgumentException, RuntimeException {
+            if(stack == null || frame == null || frame.length == 0)
+                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments");
             if(!this.isUp)
                   throw new RuntimeException("NetworkAdapter: adapter is down");
-            
-            stack.push(new SimpleDLLProtocol(
-                  this.macAddress,
-                  this.getLinkedAdapter().getMacAddress()
-                  )
-            );
 
-            byte[] encapsulatedData = stack.encapsulate(frame);
-            this.getLinkedAdapter().receive(stack, encapsulatedData);
+            SimpleDLLProtocol framingProtocol = new SimpleDLLProtocol(
+                  this.macAddress, 
+                  this.getLinkedAdapter().getMacAddress()
+            );
+            byte[] encapsulated = framingProtocol.encapsulate(frame);
+            stack.push(framingProtocol);
+            
+            this.getLinkedAdapter().receive(stack, encapsulated);
       }
 
       /**
@@ -143,11 +146,31 @@ public final class NetworkAdapter {
        * @param frame raw bytes received
        * @throws IllegalArgumentException if frame is null or empty
        */
-      public void receive(ProtocolPipeline stack, byte[] frame) {
-            if(frame == null || frame.length == 0)
-                  throw new IllegalArgumentException("NetworkAdapter: frame cannot be null or empty");
-            if(!this.isUp)
-                  return; // drop silently
+      public void receive(ProtocolPipeline stack, byte[] frame) throws IllegalArgumentException, RuntimeException {
+            if(stack == null || frame == null || frame.length == 0)
+                  throw new IllegalArgumentException("NetworkAdapter: invalid arguments");
+            if(!this.isUp) {
+                  Logger.getInstance().debug("Adapter down");
+                  return; // drop them
+            }
+
+            if(this.owner == null) 
+                  throw new RuntimeException("NetworkAdapter: owner node is null");
+
+            Protocol framingProtocol = stack.pop();
+            Address destination = framingProtocol.extractDestination(frame);
+            if(!(destination instanceof Mac))
+                  throw new RuntimeException("NetworkAdapter: expected dll protocol");
+
+            Mac destinationMac = (Mac) destination;
+            // if frames are not for me or are not broadcast drop them
+            if(!(destination.equals(this.macAddress) || destinationMac.equals(Mac.broadcast()))) {
+                  Logger.getInstance().debug("Wrong destination Mac");
+                  return; // drop them
+            }
+
+            byte[] packets = framingProtocol.decapsulate(frame);
+            this.owner.receive(stack, packets);
       }
 
       @Override

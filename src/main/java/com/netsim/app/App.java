@@ -1,6 +1,5 @@
 package com.netsim.app;
 
-import com.netsim.addresses.IPv4;
 import com.netsim.network.NetworkNode;
 import com.netsim.networkstack.ProtocolPipeline;
 
@@ -37,10 +36,9 @@ public abstract class App {
             this.username = newUsername;
       }
       
-      public abstract void start(NetworkNode node);
+      public abstract void start();
       public abstract void send(ProtocolPipeline stack, byte[] data);
-      public abstract void receive(byte[] data);
-      public abstract IPv4 getDestination();
+      public abstract void receive(ProtocolPipeline stack, byte[] data);
 
       /**
        * Prints some message in System.out
@@ -58,5 +56,10 @@ public abstract class App {
       /** @return current User's username */
       public String getUsername() {
             return this.username;
+      }
+
+      /** @return current owner of the app */
+      public NetworkNode getOwner() {
+            return this.owner;
       }
 }

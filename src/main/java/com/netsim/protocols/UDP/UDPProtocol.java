@@ -66,7 +66,7 @@ public class UDPProtocol implements Protocol {
          * UDP header
          * @throws IllegalArgumentException if upperLayerPDU is null or its length is 0
          * @throws NullPointerException if the next protocol of UDP is not defined
-         * @throws cdRuntimException if something goes wrong when encapsulating 
+         * @throws RuntimeException if something goes wrong when encapsulating 
          */
         public byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException, NullPointerException, RuntimeException {
             if(upperLayerPDU == null || upperLayerPDU.length == 0)

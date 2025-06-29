@@ -107,6 +107,10 @@ public class MSGProtocol implements Protocol {
         return null;  // not applicable
     }
 
+    public String getUser() {
+        return this.name;
+    }
+
     public static Port port() {
         return new Port("9696");
     }

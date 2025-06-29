@@ -30,7 +30,6 @@ public class Help extends Command {
       private List<String> generateCommands() {
             final List<String> commands = new LinkedList<>();
             commands.add("help");
-            commands.add("connect");
 
             return commands;
       }

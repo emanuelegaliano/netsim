@@ -1,19 +1,20 @@
 package com.netsim.app.msg;
 
-import java.util.LinkedList;
 import java.util.Scanner;
 
 import com.netsim.addresses.IPv4;
+import com.netsim.addresses.Mac;
 import com.netsim.app.App;
 import com.netsim.app.Command;
 import com.netsim.network.Interface;
+import com.netsim.network.NetworkAdapter;
 import com.netsim.network.NetworkNode;
 import com.netsim.network.host.Host;
+import com.netsim.network.host.HostBuilder;
+import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.MSG.MSGProtocol;
 import com.netsim.protocols.UDP.UDPProtocol;
-import com.netsim.table.ArpTable;
-import com.netsim.table.RoutingTable;
 
 public class MsgClient extends App {
       private Scanner input;
@@ -38,14 +39,10 @@ public class MsgClient extends App {
             this.setUsername(this.input.nextLine());
       }
 
-      public void start(NetworkNode node) {
+      public void start() {
             // autentication
             System.out.println("Welcome to " + this.name);
             this.askName();
-
-            // connecting to the nearest server
-            Command connect = this.commands.get("connect");
-            connect.execute(this, "");
 
             // authentication complete
             this.printAppMessage("Hello " + this.username + "\n");
@@ -64,15 +61,35 @@ public class MsgClient extends App {
                         Command cmd = this.commands.get(cmdIdentifier);
                         cmd.execute(this, params);
 
-
                   } catch(final RuntimeException e) {
                         this.printAppMessage(e.getLocalizedMessage());
                   }
             }
       }
 
-      public void receive(byte[] data) {
+      public void receive(ProtocolPipeline stack, byte[] data) {
+            // validate arguments
+            if(stack==null||data==null||data.length==0)
+                  throw new IllegalArgumentException("MsgClient.receive: invalid arguments");
 
+            // 1) strip off UDP transport
+            Protocol p1 = stack.pop();
+            if(!(p1 instanceof UDPProtocol))
+                  throw new RuntimeException("MsgClient.receive: expected UDP protocol");
+            UDPProtocol udp = (UDPProtocol)p1;
+            byte[] msgFrame = udp.decapsulate(data);
+
+            // 2) strip off MSG application layer
+            Protocol p2 = stack.pop();
+            if(!(p2 instanceof MSGProtocol))
+                  throw new RuntimeException("MsgClient.receive: expected MSG protocol");
+            MSGProtocol msgProto = (MSGProtocol)p2;
+            byte[] payloadBytes = msgProto.decapsulate(msgFrame);
+
+            // 3) decode and display
+            String sender = msgProto.getUser();
+            String message = new String(payloadBytes, java.nio.charset.StandardCharsets.UTF_8);
+            this.printAppMessage(sender + ": " + message + "\n");
       }
 
       /**
@@ -84,28 +101,36 @@ public class MsgClient extends App {
             if(this.owner == null)
                   throw new RuntimeException("MsgClient: node is null");
 
-            stack.push(
-                  new UDPProtocol(
-                        this.owner.getMTU() - 20 - 20, // MTU - MSGProtocolheader - UDPProtocolHeader 
-                        this.owner.randomPort(), 
-                        MSGProtocol.port()
-                        )
-                  );
+            UDPProtocol protocol = new UDPProtocol(
+                  this.owner.getMTU() - 20 - 20, // MTU - MSGProtocolheader - UDPProtocolHeader 
+                  this.owner.randomPort(), 
+                  MSGProtocol.port()
+            );
             
-            this.owner.send(serverIP, stack, data);
-
-      }
-
-      public IPv4 getDestination() {
-            return this.serverIP;
+            byte[] encapsulated = protocol.encapsulate(data);
+            stack.push(protocol);
+            this.owner.send(serverIP, stack, encapsulated);
       }
 
       public static void main(String[] args) {
-            Host test = new Host("s", new RoutingTable(), new ArpTable(), new LinkedList<Interface>());
+            Host test = new HostBuilder()
+            .addInterface(
+                  new Interface(
+                        new NetworkAdapter(
+                              "d", 
+                              1500,
+                              new Mac("AA:BB:CC:DD:EE:FF")
+                        ),
+                  new IPv4("192.168.11", 24)
+                  )
+            )
+            .build();
+
+
             MsgClient app = new MsgClient(
-                  null, 
+                  test, 
                   new IPv4("192.168.1.1", 24)
                   );
-            app.start(test);
+            app.start();
       }
 }

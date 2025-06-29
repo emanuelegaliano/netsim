@@ -8,6 +8,3 @@ cose da fare:
 - Continuare l'incapsulamento dei nodi (Adapter, Host, Router, Server), 
       sono arrivato a send di host e adapter, manca il receive di adapter e host
       e tutti gli altri send/receive per ogni nodo.
-
-
-
