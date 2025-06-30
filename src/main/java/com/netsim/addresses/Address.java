@@ -1,108 +1,104 @@
 package com.netsim.addresses;
 
 import java.util.Arrays;
+import com.netsim.utils.Logger;
 
 public abstract class Address {
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS = Address.class.getSimpleName();
+
     protected int bytesLen;
     protected byte[] address;
 
     /**
-     * @param addressString the address of the IPv4
-     * @param maskString the mask of the subnet
-     * @throws IllegalArgumentException if address it's not valid when parsing
+     * @param addressString textual address (e.g. "192.168.1.1")
+     * @param bytes         expected length of parsed byte array
      */
-    public Address(String addressString, int bytes) throws IllegalArgumentException {
+    public Address(String addressString, int bytes) {
+        logger.info("[" + CLS + "] constructing from \"" + addressString + "\", expecting " + bytes + " bytes");
         this.bytesLen = bytes;
         byte[] byteRepr = this.parse(addressString);
-        if(byteRepr.length != bytes)
-            throw new IllegalArgumentException("Invalid addressString, must be bytes long");
-        
+        if (byteRepr.length != bytes) {
+            String msg = "Invalid addressString length, must be " + bytes + " bytes";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
+        }
         this.setAddress(byteRepr);
+        logger.info("[" + CLS + "] constructed successfully: " + this.stringRepresentation());
     }
 
     /**
-     * @param addressString the 4 byte address of the object
-     * @throws IllegalArgumentException if address it's not valid when parsing
+     * @param addressString textual form only; length inferred by parse()
      */
-    public Address(String addressString) throws IllegalArgumentException {
+    public Address(String addressString) {
+        logger.info("[" + CLS + "] constructing from \"" + addressString + "\"");
         byte[] byteRepr = this.parse(addressString);
         this.bytesLen = byteRepr.length;
         this.setAddress(byteRepr);
+        logger.info("[" + CLS + "] constructed successfully: " + this.stringRepresentation());
     }
 
-    /**
-     * 
-     * @param address the address that will be parsed
-     * @return the byte representation of the address
-     */
+    /** parse textual form into raw byte[] */
     protected abstract byte[] parse(String address);
-    /**
-     * 
-     * @param newAddress the new address that wil be set
-     */
+
+    /** set from new textual form (implement in subclass) */
     public abstract void setAddress(String newAddress);
 
     /**
-     * 
-     * @param newAddress the byte representation of the address that will be assigned if it's valid
-     * @throws IllegalArgumentException if the address it's valid
+     * @param newAddress raw bytes to assign
      */
     protected void setAddress(byte[] newAddress) {
-        if(newAddress == null || newAddress.length != this.bytesLen) 
-            throw new IllegalArgumentException(
-                "New address must be " + this.bytesLen + " bytes long"
-            );
-
+        if (newAddress == null || newAddress.length != this.bytesLen) {
+            String msg = "New address must be " + this.bytesLen + " bytes long";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
+        }
         this.address = newAddress.clone();
+        logger.info("[" + CLS + "] byte address set to " + stringRepresentation());
     }
 
-    /**
-     * @return byte array of the address
-     * @throws NullPointerException if address is null
-     */
+    /** @return raw bytes */
     public byte[] byteRepresentation() {
-        if(this.address == null)
-            throw new NullPointerException("Address is not defined");
-        
-        return this.address;
+        if (this.address == null) {
+            String msg = "Address is not defined";
+            logger.error("[" + CLS + "] " + msg);
+            throw new NullPointerException(msg);
+        }
+        return this.address.clone();
     }
 
-    /**
-     * @return string representation of the address bytes arrray
-     * @throws NullPointerException if address is null
-     */
+    /** @return dotted/string form */
     public String stringRepresentation() {
-        if(this.address == null)
-            throw new NullPointerException("Address is not defined");
+        if (this.address == null) {
+            String msg = "Address is not defined";
+            logger.error("[" + CLS + "] " + msg);
+            throw new NullPointerException(msg);
+        }
 
-        byte[] octets = this.byteRepresentation(); // o toByte()
-        StringBuilder sb = new StringBuilder(3 * octets.length + octets.length - 1);
-        for (int i = 0; i < octets.length; i++) {
-            sb.append(octets[i] & 0xFF);
-            if (i < octets.length - 1) {
-                sb.append('.');
-            }
+        StringBuilder sb = new StringBuilder(this.bytesLen * 4);
+        for (int i = 0; i < address.length; i++) {
+            sb.append(address[i] & 0xFF);
+            if (i < address.length - 1) sb.append('.');
         }
         return sb.toString();
     }
-    
-    @Override   
+
+    @Override
     public boolean equals(Object obj) {
-        if(obj == null)
+        if (obj == null || !(obj.getClass().isInstance(this))) {
+            logger.debug("[" + CLS + "] equals() false: incompatible type or null");
             return false;
-
-        if(!obj.getClass().isInstance(this))
-            return false;
-
-        Address other = (Address)obj;
-
-        return Arrays.equals(this.byteRepresentation(), other.byteRepresentation());
+        }
+        boolean eq = Arrays.equals(this.byteRepresentation(), ((Address) obj).byteRepresentation());
+        logger.debug("[" + CLS + "] equals() result with " 
+                     + obj.getClass().getSimpleName() + ": " + eq);
+        return eq;
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(this.address);
-        result = 31 * result;
-        return result;
+        int h = Arrays.hashCode(this.address);
+        logger.debug("[" + CLS + "] hashCode() = " + h);
+        return h;
     }
 }

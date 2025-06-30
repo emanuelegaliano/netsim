@@ -1,185 +1,173 @@
 package com.netsim.addresses;
 
+import java.util.Arrays;
+import com.netsim.utils.Logger;
+
+/**
+ * IPv4 address implementation.
+ */
 public class IPv4 extends IP {
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS = IPv4.class.getSimpleName();
 
     /**
-     * Constructs an IPv4 address using a dotted-decimal address and subnet mask string.
-     *
-     * @param addressString the IPv4 address (e.g., "192.168.1.1")
-     * @param maskString the subnet mask (e.g., "255.255.255.0")
-     * @throws IllegalArgumentException by super constructor
+     * Dotted‐decimal + mask string ctor.
      */
-    public IPv4(String addressString, String maskString) throws IllegalArgumentException {
+    public IPv4(String addressString, String maskString) {
         super(addressString, maskString, 4);
+        logger.info("[" + CLS + "] constructed " + stringRepresentation() + " mask=" + maskString);
     }
 
     /**
-     * Constructs an IPv4 address using a dotted-decimal address and prefix length.
-     *
-     * @param addressString the IPv4 address
-     * @param maskPrefix the subnet prefix length (e.g., 24 for 255.255.255.0)
-     * @throws IllegalArgumentException by super constructor
+     * Dotted‐decimal + prefix length ctor.
      */
-    public IPv4(String addressString, int maskPrefix) throws IllegalArgumentException {
+    public IPv4(String addressString, int maskPrefix) {
         super(addressString, maskPrefix, 4);
+        logger.info("[" + CLS + "] constructed " 
+                    + stringRepresentation() + "/" + maskPrefix);
     }
 
-    /**
-     * Parses a dotted‐decimal IPv4 address into a 4-byte array.
-     *
-     * @param address the IPv4 address string
-     * @return a byte array of length 4
-     * @throws IllegalArgumentException if the address is not a valid IPv4 format
-     */
+    @Override
     protected byte[] parse(String address) {
-        if(address == null)
+        if (address == null) {
+            logger.error("[" + CLS + "] parse failed: address string is null");
             throw new IllegalArgumentException("Address string cannot be null");
+        }
 
-        // split with limit to catch empty parts (e.g. "1.2..4")
         String[] parts = address.trim().split("\\.", -1);
-        if(parts.length != 4) {
-            throw new IllegalArgumentException(
-                "Invalid IPv4 format: must contain exactly 4 octets, got " 
-                + parts.length + " in \"" + address + "\""
-            );
+        if (parts.length != 4) {
+            String msg = "Invalid IPv4 format, got " + parts.length + " parts in \"" + address + "\"";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
         }
 
         byte[] octets = new byte[4];
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             String part = parts[i];
-            if(part.isEmpty()) {
-                throw new IllegalArgumentException(
-                    "Octet #" + (i+1) + " is empty in \"" + address + "\""
-                );
+            if (part.isEmpty()) {
+                String msg = "Octet #" + (i+1) + " is empty in \"" + address + "\"";
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(msg);
             }
-
             int val;
             try {
                 val = Integer.parseInt(part);
-            } catch(NumberFormatException e) {
-                throw new IllegalArgumentException(
-                    "Octet #" + (i+1) + " is not a valid integer: \"" + part + "\"", 
-                    e
-                );
+            } catch (NumberFormatException e) {
+                String msg = "Octet #" + (i+1) + " not a valid integer: \"" + part + "\"";
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(msg, e);
             }
-
-            if(val < 0 || val > 255) {
-                throw new IllegalArgumentException(
-                    "Octet #" + (i+1) + " out of range (0–255): " + val
-                );
+            if (val < 0 || val > 255) {
+                String msg = "Octet #" + (i+1) + " out of range (0–255): " + val;
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(msg);
             }
-
             octets[i] = (byte) val;
         }
-
+        logger.debug("[" + CLS + "] parsed \"" + address + "\" → " + Arrays.toString(octets));
         return octets;
     }
 
+    @Override
     public boolean isLoopback() {
-        return isInSubnet("127.0.0.0", 8);
+        boolean result = isInSubnet("127.0.0.0", 8);
+        logger.debug("[" + CLS + "] isLoopback() → " + result);
+        return result;
     }
 
+    @Override
     public boolean isMulticast() {
-        return isInSubnet("224.0.0.0", 4);
+        boolean result = isInSubnet("224.0.0.0", 4);
+        logger.debug("[" + CLS + "] isMulticast() → " + result);
+        return result;
     }
 
+    @Override
     public boolean isBroadcast() {
-        for(byte b : this.address) {
+        for (byte b : this.address) {
             if ((b & 0xFF) != 0xFF) {
+                logger.debug("[" + CLS + "] isBroadcast() → false");
                 return false;
             }
         }
+        logger.debug("[" + CLS + "] isBroadcast() → true");
         return true;
     }
 
+    @Override
     public boolean isPrivate() {
-        return isInSubnet("10.0.0.0", 8)
-            || isInSubnet("172.16.0.0", 12)
-            || isInSubnet("192.168.0.0", 16);
+        boolean result = isInSubnet("10.0.0.0", 8)
+                      || isInSubnet("172.16.0.0", 12)
+                      || isInSubnet("192.168.0.0", 16);
+        logger.debug("[" + CLS + "] isPrivate() → " + result);
+        return result;
     }
 
+    @Override
     public boolean isLinkLocal() {
-        return isInSubnet("169.254.0.0", 16);
+        boolean result = isInSubnet("169.254.0.0", 16);
+        logger.debug("[" + CLS + "] isLinkLocal() → " + result);
+        return result;
     }
 
+    @Override
     public boolean isUnspecified() {
-        for(byte b : address) {
-            if(b != 0) return false;
+        for (byte b : address) {
+            if (b != 0) {
+                logger.debug("[" + CLS + "] isUnspecified() → false");
+                return false;
+            }
         }
+        logger.debug("[" + CLS + "] isUnspecified() → true");
         return true;
     }
 
-    public boolean isSubnet() throws IllegalArgumentException {
-        int prefix = this.mask.getPrefix(); // es. 24
-        if (prefix < 0 || prefix > 32)
-            throw new IllegalStateException("Invalid mask prefix: " + prefix);
-
-        // costruisce la maschera in byte
+    @Override
+    public boolean isSubnet() {
+        int prefix = this.mask.getPrefix();
+        if (prefix < 0 || prefix > 32) {
+            String msg = "Invalid mask prefix: " + prefix;
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalStateException(msg);
+        }
         byte[] maskBytes = new Mask(prefix, 4).byteRepresentation();
         byte[] addrBytes = this.byteRepresentation();
-
-        // verifica che addrBytes & ~maskBytes == 0 in tutti gli ottetti
-        for(int i = 0; i < 4; i++) {
-            int hostBits = addrBytes[i] & (~maskBytes[i]);
-            if (hostBits != 0)
+        for (int i = 0; i < 4; i++) {
+            if ((addrBytes[i] & ~maskBytes[i]) != 0) {
+                logger.debug("[" + CLS + "] isSubnet() → false");
                 return false;
+            }
         }
-
+        logger.debug("[" + CLS + "] isSubnet() → true");
         return true;
-    }
-
-    /** @return global broadcast */
-    public static IPv4 broadcast() {
-        return new IPv4("255.255.255.255", 0);
-    }
-
-    /** @return broadcast based on the current subnet */
-    public IPv4 subnetBroadcast() {
-        String[] ipParts = this.stringRepresentation().split("\\.");
-        int ip = 0;
-
-        for (int i = 0; i < 4; i++)
-            ip |= (Integer.parseInt(ipParts[i]) << (24 - (8 * i)));
-
-        int subnetMask = 0xFFFFFFFF << (32 - this.mask.getPrefix());
-
-        int broadcast = ip | (~subnetMask);
-
-        String broadcastStr = 
-            ((broadcast >> 24) & 0xFF) + "." +
-            ((broadcast >> 16) & 0xFF) + "." +
-            ((broadcast >> 8) & 0xFF) + "." +
-            (broadcast & 0xFF);
-
-        return new IPv4(broadcastStr, this.mask.getPrefix());
     }
 
     /**
-     * @return the network address (subnet) of this IPv4, 
-     *         i.e. this.address & this.mask
+     * @return broadcast based on the current subnet (e.g. x.x.x.255)
      */
-    public IPv4 getSubnet() {
-        int prefix = this.mask.getPrefix();
-        if (prefix < 0 || prefix > 32) {
-            throw new IllegalStateException("Invalid mask prefix: " + prefix);
-        }
-
-        byte[] maskBytes = new Mask(prefix, 4).byteRepresentation();
-        byte[] addrBytes = this.byteRepresentation();
-
-        byte[] netBytes = new byte[4];
+    public IPv4 subnetBroadcast() {
+        String[] ipParts = this.stringRepresentation().split("\\.");
+        int ipInt = 0;
         for (int i = 0; i < 4; i++) {
-            netBytes[i] = (byte)(addrBytes[i] & maskBytes[i]);
+            ipInt |= (Integer.parseInt(ipParts[i]) << (24 - (8 * i)));
         }
+        int subnetMask = (mask.getPrefix() == 0)
+                       ? 0
+                       : (~0) << (32 - this.mask.getPrefix());
+        int broadcastInt = ipInt | ~subnetMask;
 
-        String netStr = String.format(
+        String bStr = String.format(
             "%d.%d.%d.%d",
-            netBytes[0] & 0xFF,
-            netBytes[1] & 0xFF,
-            netBytes[2] & 0xFF,
-            netBytes[3] & 0xFF
+            (broadcastInt >> 24) & 0xFF,
+            (broadcastInt >> 16) & 0xFF,
+            (broadcastInt >> 8) & 0xFF,
+            broadcastInt & 0xFF
         );
-
-        return new IPv4(netStr, prefix);
+        IPv4 bc = new IPv4(bStr, mask.getPrefix());
+        logger.info("[" + CLS + "] subnetBroadcast() → " + bc.stringRepresentation());
+        return bc;
     }
+
+    @Override public boolean equals(Object o) { return super.equals(o); }
+    @Override public int     hashCode()      { return super.hashCode(); }
 }

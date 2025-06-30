@@ -1,142 +1,127 @@
 package com.netsim.addresses;
 
+import com.netsim.utils.Logger;
+
+/**
+ * A subnet‐mask of length N bytes with a prefix, e.g. 255.255.255.0/24.
+ */
 public class Mask extends Address {
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS = Mask.class.getSimpleName();
+
     private int prefix;
 
     /**
-     * @param prefix the prefix of the subnet: x.x.x.x/prefix
-     * @param bytes the length in bytes of the mask (e.g. 4 bytes)
-     * @throws IllegalArgumentException if the string mask build from 
-     *         prefix it's not valid when parsing
+     * Build from prefix length.
      */
     public Mask(int prefix, int bytes) throws IllegalArgumentException {
         super(buildMaskString(prefix, bytes), bytes);
         this.prefix = prefix;
+        logger.info("[" + CLS + "] constructed mask=" + stringRepresentation() + " (/" + prefix + ")");
     }
 
     /**
-     * Constructor of Mask using String notation "x.x.x.x"
-     * @param address used to build the mask and count bytes
-     * @param bytes the length in bytes of the mask (e.g. 4 bytes)
-     * @throws IllegalArgumentException if address it's valid when parsing
+     * Build from dotted mask string.
      */
     public Mask(String address, int bytes) throws IllegalArgumentException {
         super(address, bytes);
-
+        // validate contiguity and compute prefix
         boolean zeroFound = false;
-        int computedPrefix = 0;
-
-        for(byte b : this.address) {
-            int unsignedOctet = b & 0xFF;
-            for(int bitIndex = 7; bitIndex >= 0; bitIndex--) {
-                boolean isOne = ((unsignedOctet >> bitIndex) & 1) == 1;
-                if(isOne) {
-                    if(zeroFound)
-                        throw new IllegalArgumentException("Non-Contigue mask: " + address);
-                    
-                    computedPrefix++;
+        int computed = 0;
+        for (byte b : this.address) {
+            int unsigned = b & 0xFF;
+            for (int bit = 7; bit >= 0; bit--) {
+                boolean one = ((unsigned >> bit) & 1) == 1;
+                if (one) {
+                    if (zeroFound) {
+                        String msg = "Non‐contiguous mask: " + address;
+                        logger.error("[" + CLS + "] " + msg);
+                        throw new IllegalArgumentException(msg);
+                    }
+                    computed++;
                 } else {
                     zeroFound = true;
                 }
             }
         }
-
-        this.prefix = computedPrefix;
+        this.prefix = computed;
+        logger.info("[" + CLS + "] parsed mask=" + stringRepresentation() + " (/" + prefix + ")");
     }
 
     /**
-     * 
-     * @param prefix the prefix used to build the mask (e.g. 24 = 255.255.255.0)
-     * @param bytes the length in bytes of the mask
-     * @return
+     * Build dotted‐decimal mask from prefix.
      */
     public static String buildMaskString(int prefix, int bytes) {
-        int fullBytes = prefix / 8;
-        int remBits = prefix % 8;
+        int fullBytes = prefix / 8, rem = prefix % 8;
         StringBuilder sb = new StringBuilder(bytes * 4);
-
         for (int i = 0; i < bytes; i++) {
             int octet;
             if (i < fullBytes) {
                 octet = 0xFF;
             } else if (i == fullBytes) {
-                // e.g. prefix=20 → remBits=4 → 0xFF << 4 = 11110000b = 240
-                octet = ((0xFF << (8 - remBits)) & 0xFF);
+                octet = ((0xFF << (8 - rem)) & 0xFF);
             } else {
                 octet = 0;
             }
-
             sb.append(octet);
             if (i < bytes - 1) sb.append('.');
         }
-
+        logger.debug("[Mask] buildMaskString -> " + sb.toString());
         return sb.toString();
     }
 
-    /**
-     * @throws IllegalArgumentException if:
-     * newAddress is null, 
-     * length is > byteLen of Mask, 
-     * either octet is null or not valid (not in range 0-255).
-     */
+    @Override
     public void setAddress(String newAddress) throws IllegalArgumentException {
-        this.parse(newAddress);
+        super.setAddress(parse(newAddress));
+        logger.info("[" + CLS + "] address set to " + stringRepresentation());
     }
 
     /**
-     * @param newPrefix the new prefix that will replace old prefix
+     * Change the prefix length only.
      */
     public void setPrefix(int newPrefix) {
+        logger.info("[" + CLS + "] prefix changed from /" + this.prefix + " to /" + newPrefix);
         this.prefix = newPrefix;
     }
 
-    /**
-     * @throws IllegalArgumentException if:
-     * - newAddress is null
-     * - length is > byteLen of Mask
-     * - either octet is null or not valid (not in range 0-255)
-     */
+    @Override
     protected byte[] parse(String address) {
-        if(address == null)
-            throw new IllegalArgumentException("Address string cannot be null");
-        
-        String[] parts = address.trim().split("\\.");
-        if(parts.length != this.bytesLen) 
-            throw new IllegalArgumentException(
-                "Invalid IPv4 format: must contain exactly " 
-                + this.bytesLen + " octets, got " 
-                + parts.length + " in \"" + address + "\""    
-            );
-
-        
-        byte[] octets = new byte[this.bytesLen];
-        for(int i = 0; i < this.bytesLen; i++) {
-
-            String part = parts[i];
-            if(part.isEmpty())
-                throw new IllegalArgumentException(
-                    "Octet #" + (i+1) + " is empty in \"" + address + "\""
-                );
-            
-            int val;
-            try {
-                val = Integer.parseInt(part);
-            } catch(NumberFormatException e) {
-                throw new IllegalArgumentException(
-                    "Octet #" + (i+1) + " is not a valid integer: \"" + part + "\"", 
-                    e
-                );
-            }
-
-            if(val < 0 || val > 255) {
-                throw new IllegalArgumentException(
-                    "Octet #" + (i+1) + " out of range (0-255): " + val
-                );
-            }
-
-            octets[i] = (byte) val;
+        if (address == null) {
+            String msg = "parse failed: address string is null";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
         }
-
+        String[] parts = address.trim().split("\\.");
+        if (parts.length != this.bytesLen) {
+            String msg = "Invalid mask format: expected " + this.bytesLen
+                       + " octets, got " + parts.length + " in \"" + address + "\"";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
+        }
+        byte[] octets = new byte[this.bytesLen];
+        for (int i = 0; i < this.bytesLen; i++) {
+            String part = parts[i];
+            if (part.isEmpty()) {
+                String msg = "Octet #" + (i+1) + " is empty in \"" + address + "\"";
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(msg);
+            }
+            int v;
+            try {
+                v = Integer.parseInt(part);
+            } catch (NumberFormatException e) {
+                String msg = "Octet #" + (i+1) + " not a valid integer: \"" + part + "\"";
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(msg, e);
+            }
+            if (v < 0 || v > 255) {
+                String msg = "Octet #" + (i+1) + " out of range (0–255): " + v;
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(msg);
+            }
+            octets[i] = (byte) v;
+        }
+        logger.debug("[" + CLS + "] parsed \"" + address + "\" → " + java.util.Arrays.toString(octets));
         return octets;
     }
 

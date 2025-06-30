@@ -1,5 +1,3 @@
-// utils/Logger.java
-
 package com.netsim.utils;
 
 import java.nio.file.Files;
@@ -96,11 +94,7 @@ public class Logger {
     }
 
     /**
-     * This method returns the instance of the logger.
-     * If the instance is null (no call yet) then instantiate it
-     * and returns the instance
-     * 
-     * @return Logger instance
+     * Returns the singleton Logger instance.
      */
     public static Logger getInstance() {
         if(instance == null) 
@@ -108,36 +102,25 @@ public class Logger {
         return instance;
     }
 
-    /**
-     * Info‐level log. Always written to file; printed to console only
-     * if LOG_ON_CONSOLE=true.
-     */
     public void info(String msg) {
-        String logMsg = "LOGGER INFO: " + msg;
+        // %5s: campo largo 5, allineato a destra → “ INFO”
+        String logMsg = String.format("LOGGER %5s:\t%s", "INFO", msg);
         this.log(logMsg);
         if (logOnConsole) {
             System.out.println(GREEN + logMsg + RESET);
         }
     }
 
-    /**
-     * Error‐level log. Always written to file; printed to stderr only
-     * if LOG_ON_CONSOLE=true.
-     */
     public void error(String err) {
-        String logMsg = "LOGGER ERROR: " + err;
+        String logMsg = String.format("LOGGER %5s:\t%s", "ERROR", err);
         this.log(logMsg);
         if (logOnConsole) {
             System.err.println(RED + logMsg + RESET);
         }
     }
 
-    /**
-     * Debug‐level log. Always written to file; printed to console only
-     * if LOG_ON_CONSOLE=true.
-     */
     public void debug(String msg) {
-        String logMsg = "LOGGER DEBUG: " + msg;
+        String logMsg = String.format("LOGGER %5s:\t%s", "DEBUG", msg);
         this.log(logMsg);
         if (logOnConsole) {
             System.out.println(BLUE + logMsg + RESET);

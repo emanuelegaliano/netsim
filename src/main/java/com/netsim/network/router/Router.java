@@ -34,10 +34,15 @@ public class Router extends NetworkNode {
             RoutingInfo route = this.getRoute(destination);
             NetworkAdapter outAdapter = route.getDevice();
             outAdapter.send(stack, data);
-            logger.info("[" + CLS + "] forwarded packet to " + destination.stringRepresentation());
+            logger.info("[" + CLS + "] forwarded packet to " 
+                        + destination.stringRepresentation());
         } catch (RuntimeException e) {
-            logger.error("[" + CLS + "] unknown destination: " + destination.stringRepresentation());
-            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
+            // only log that the router couldn't forward; 
+            // don’t echo the upper‐layer message here
+            logger.error("[" + CLS + "] cannot forward to " 
+                        + destination.stringRepresentation());
+            logger.debug("[" + CLS + "] routing failure: " 
+                        + e.getLocalizedMessage());
         }
     }
 
