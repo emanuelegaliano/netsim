@@ -19,14 +19,14 @@ import com.netsim.protocols.UDP.UDPProtocol;
  * Thereafter parses “recipient:message” payloads and forwards them.
  * </p>
  */
-public class MsgServerApp extends App {
+public class MsgServer extends App {
     private final Map<String,IPv4> users = new HashMap<>();
     private IPv4 pendingDest;
 
     /**
      * @param node the Server node hosting this App (non‐null)
      */
-    public MsgServerApp(NetworkNode node) {
+    public MsgServer(NetworkNode node) {
         super(
             "msg",
             "<no CLI commands on server>",

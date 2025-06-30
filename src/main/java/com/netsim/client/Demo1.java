@@ -7,7 +7,7 @@ import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
 import com.netsim.app.Command;
 import com.netsim.app.msg.MsgClient;
-import com.netsim.app.msg.MsgServerApp;
+import com.netsim.app.msg.MsgServer;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
 import com.netsim.network.host.Host;
@@ -78,7 +78,7 @@ public class Demo1 {
         adapterB.setOwner(bobHost);
 
         // 5. Creazione delle applicazioni di messaggistica per ciascun nodo
-        MsgServerApp serverApp = new MsgServerApp(serverHost);
+        MsgServer serverApp = new MsgServer(serverHost);
         MsgClient aliceClient  = new MsgClient(aliceHost, serverIp1);  // serverIp1 è l'indirizzo del server visto da Alice
         MsgClient bobClient    = new MsgClient(bobHost, serverIp2);    // serverIp2 è l'indirizzo del server visto da Bob
 

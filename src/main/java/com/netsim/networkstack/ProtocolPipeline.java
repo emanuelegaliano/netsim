@@ -76,4 +76,24 @@ public class ProtocolPipeline {
       public int size() {
             return this.stack.size();
       }
+
+      /**
+       * Checks whether the stack is empty.
+       * @return true if no protocols in the stack
+       */
+      public boolean isEmpty() {
+            return this.stack.isEmpty();
+      }
+
+      /**
+       * Peeks at the top protocol without removing it.
+       * @return the top Protocol
+       * @throws RuntimeException if the stack is empty
+       */
+      public Protocol peek() throws RuntimeException {
+            if (this.stack.isEmpty())
+                  throw new RuntimeException("ProtocolPipeline: stack is empty");
+            return this.stack.get(0);
+      }
+
 }
