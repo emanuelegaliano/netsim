@@ -3,123 +3,140 @@ package com.netsim.addresses;
 import com.netsim.utils.Logger;
 
 /**
- * Represents a transport-layer port (0–65535) using a 2-byte address format.
+ * Represents a transport‐layer port (0–65535) with a 2‐byte big‐endian encoding.
  */
 public class Port extends Address {
     private static final Logger logger = Logger.getInstance();
-    private static final String CLS = Port.class.getSimpleName();
+    private static final String CLS    = Port.class.getSimpleName();
 
     private int port;
 
     /**
-     * Constructs a Port from a string port value.
+     * Constructs a Port from a decimal string.
      *
-     * @param portStr the port number (0–65535)
-     * @throws IllegalArgumentException if the port is out of range or invalid
+     * @param portStr the port number as string (0–65535)
+     * @throws IllegalArgumentException if portStr is null, non‐numeric, or out of range
      */
-    public Port(String portStr) {
+    public Port(String portStr) throws IllegalArgumentException {
         super(portStr, 2);
-        this.port = parsePort(portStr);
+        this.port = this.parsePort(portStr);
         logger.info("[" + CLS + "] constructed port=" + this.port);
     }
 
     /**
-     * Sets the port value using an integer and updates the address byte array.
+     * Parses a string into an integer port value.
+     *
+     * @param input the port number as string
+     * @return the parsed port (0–65535)
+     * @throws IllegalArgumentException if input is null, non‐numeric, or out of range
      */
-    public void setAddress(int newPort) {
-        if (newPort < 0 || newPort > 0xFFFF) {
-            String msg = "Port out of range: " + newPort;
-            logger.error("[" + CLS + "] " + msg);
-            throw new IllegalArgumentException(msg);
-        }
-        this.port = newPort;
-        this.address = shortToBytes(newPort);
-        logger.info("[" + CLS + "] set port to " + this.port);
-    }
-
-    /**
-     * Sets the port using a string representation of the number.
-     */
-    @Override
-    public void setAddress(String portStr) {
-        if (portStr == null) {
-            String msg = "Port string cannot be null";
-            logger.error("[" + CLS + "] " + msg);
-            throw new IllegalArgumentException(msg);
-        }
-        int parsed = parsePort(portStr);
-        setAddress(parsed);
-    }
-
-    /**
-     * Parses a string port into a 2-byte array (big-endian),
-     * storing the numeric port in `this.port`.
-     */
-    @Override
-    protected byte[] parse(String input) {
-        int parsed = parsePort(input);
-        this.port = parsed;
-        byte[] bytes = shortToBytes(parsed);
-        logger.debug("[" + CLS + "] parse(\"" + input + "\") → port=" + parsed);
-        return bytes;
-    }
-
-    private int parsePort(String input) {
+    private int parsePort(String input) throws IllegalArgumentException {
         if (input == null) {
             String msg = "Port string cannot be null";
             logger.error("[" + CLS + "] " + msg);
             throw new IllegalArgumentException(msg);
         }
-        int parsed;
+        int value;
         try {
-            parsed = Integer.parseInt(input.trim());
+            value = Integer.parseInt(input.trim());
         } catch (NumberFormatException e) {
             String msg = "Invalid port format: " + input;
             logger.error("[" + CLS + "] " + msg);
             throw new IllegalArgumentException(msg, e);
         }
-        if (parsed < 0 || parsed > 0xFFFF) {
-            String msg = "Port out of range: " + parsed;
+        if (value < 0 || value > 0xFFFF) {
+            String msg = "Port out of range: " + value;
             logger.error("[" + CLS + "] " + msg);
             throw new IllegalArgumentException(msg);
         }
-        return parsed;
+        return value;
     }
 
-    /** @return port value (0–65535) */
+    /**
+     * Encodes the given port into the internal byte array.
+     *
+     * @param newPort the port number (0–65535)
+     * @throws IllegalArgumentException if newPort is out of range
+     */
+    public void setAddress(int newPort) throws IllegalArgumentException {
+        if (newPort < 0 || newPort > 0xFFFF) {
+            String msg = "Port out of range: " + newPort;
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
+        }
+        this.port    = newPort;
+        this.address = Port.shortToBytes(newPort);
+        logger.info("[" + CLS + "] set port to " + this.port);
+    }
+
+    /**
+     * Parses a string and updates this port.
+     *
+     * @param portStr the port number as string
+     * @throws IllegalArgumentException if portStr is null, non‐numeric, or out of range
+     */
+    @Override
+    public void setAddress(String portStr) throws IllegalArgumentException {
+        int parsed = this.parsePort(portStr);
+        this.setAddress(parsed);
+    }
+
+    /**
+     * Parses the address bytes from the string.
+     *
+     * @param input the port number as string
+     * @return a 2‐byte big‐endian representation
+     * @throws IllegalArgumentException if input is invalid
+     */
+    @Override
+    protected byte[] parse(String input) throws IllegalArgumentException {
+        int parsed = this.parsePort(input);
+        this.port  = parsed;
+        byte[] result = Port.shortToBytes(parsed);
+        logger.debug("[" + CLS + "] parse(\"" + input + "\") → port=" + parsed);
+        return result;
+    }
+
+    /**
+     * @return the port value (0–65535)
+     */
     public int getPort() {
-        return port;
+        return this.port;
     }
 
-    /** Converts an integer (0–65535) to a 2 bytes array (big-endian). */
+    /**
+     * Converts an integer to a 2‐byte big‐endian array.
+     *
+     * @param port the port number (0–65535)
+     * @return a 2‐byte array
+     */
     private static byte[] shortToBytes(int port) {
         return new byte[] {
             (byte) ((port >> 8) & 0xFF),
-            (byte) (port & 0xFF)
+            (byte) ( port        & 0xFF)
         };
     }
 
     /**
-     * @param data 2 bytes array of Port
-     * @return a new instance of Port using that number
-     * @throws IllegalArgumentException if data is null or its length != 2
+     * Constructs a Port from a 2‐byte big‐endian array.
+     *
+     * @param data a 2‐byte array
+     * @return a new Port instance
+     * @throws IllegalArgumentException if data is null or length≠2
      */
-    public static Port fromBytes(byte[] data) {
-        Logger logger = Logger.getInstance();
-        String cls = Port.class.getSimpleName();
-
+    public static Port fromBytes(byte[] data) throws IllegalArgumentException {
         if (data == null) {
             String msg = "Port.fromBytes: input null";
-            logger.error("[" + cls + "] " + msg);
+            logger.error("[" + CLS + "] " + msg);
             throw new IllegalArgumentException(msg);
         }
         if (data.length != 2) {
-            String msg = "Port.fromBytes: 2 bytes expected but received " + data.length;
-            logger.error("[" + cls + "] " + msg);
+            String msg = "Port.fromBytes: expected 2 bytes but got " + data.length;
+            logger.error("[" + CLS + "] " + msg);
             throw new IllegalArgumentException(msg);
         }
         int portValue = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF);
-        logger.info("[" + cls + "] fromBytes → port=" + portValue);
+        logger.info("[" + CLS + "] fromBytes → port=" + portValue);
         return new Port(Integer.toString(portValue));
     }
 }

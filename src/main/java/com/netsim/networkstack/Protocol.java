@@ -3,55 +3,61 @@ package com.netsim.networkstack;
 import com.netsim.addresses.Address;
 
 /**
- * Protocol interface for chain of responsibility
- * network stack
+ * Defines the contract for a protocol in the network stack.
  */
 public interface Protocol {
-    /**
-     * 
-     * @param upperLayerPDU the byte sequence of the incapsulated message
-     * from upper layer 
-     * @return the byte sequence of the incapsulated message
-     * using this protocol
-     */
-    public byte[] encapsulate(byte[] upperLayerPDU);
-    /**
-     * 
-     * @param lowerLayerPDUthe the byte sequence of the decapsulated message
-     * from lower layer 
-     * @return the byte sequence of the decapsulated message
-     * using this protocol
-     */
-    public byte[] decapsulate(byte[] lowerLayerPDU);
-
-    /** @return address of source */
-    public Address getSource();
-
-    /** @return address of destination */
-    public Address getDestination();
 
     /**
-     * Using non-static method because in java it's not possible 
-     * to define a static method in interfaces without its implementation
-     * return nulls if a protocol does not have source
-     * @param pdu the payload of the protocol
-     * @return the source address
+     * Encapsulates the given upper‐layer PDU bytes into this protocol’s format.
+     *
+     * @param upperLayerPDU the byte sequence from the upper layer (non‐null, non‐empty)
+     * @return the encapsulated byte sequence
+     * @throws IllegalArgumentException if upperLayerPDU is null or empty
      */
-    public Address extractSource(byte[] pdu);
+    byte[] encapsulate(byte[] upperLayerPDU) throws IllegalArgumentException;
 
     /**
-     * Using non-static method because in java it's not possible 
-     * to define a static method in interfaces without its implementation.
-     * return nulls if a protocol does not have destination
-     * @param pdu the payload of the protocol
-     * @return the destination address
+     * Decapsulates the given lower‐layer PDU bytes from this protocol’s format.
+     *
+     * @param lowerLayerPDU the byte sequence from the lower layer (non‐null, non‐empty)
+     * @return the decapsulated byte sequence
+     * @throws IllegalArgumentException if lowerLayerPDU is null or empty
      */
-    public Address extractDestination(byte[] pdu);
+    byte[] decapsulate(byte[] lowerLayerPDU) throws IllegalArgumentException;
 
     /**
-     * Used for extract a protocol without touching
-     * chain of responsibility
-     * @return
+     * @return this protocol’s source Address, or null if not applicable
      */
-    public Protocol copy();
+    Address getSource();
+
+    /**
+     * @return this protocol’s destination Address, or null if not applicable
+     */
+    Address getDestination();
+
+    /**
+     * Extracts the source Address from the given PDU bytes.
+     *
+     * @param pdu the protocol data unit bytes (non‐null, non‐empty)
+     * @return the extracted source Address, or null if not present
+     * @throws IllegalArgumentException if pdu is null or empty
+     */
+    Address extractSource(byte[] pdu) throws IllegalArgumentException;
+
+    /**
+     * Extracts the destination Address from the given PDU bytes.
+     *
+     * @param pdu the protocol data unit bytes (non‐null, non‐empty)
+     * @return the extracted destination Address, or null if not present
+     * @throws IllegalArgumentException if pdu is null or empty
+     */
+    Address extractDestination(byte[] pdu) throws IllegalArgumentException;
+
+    /**
+     * Creates and returns a copy of this Protocol instance,
+     * preserving any configuration but not shared mutable state.
+     *
+     * @return a fresh copy of this Protocol
+     */
+    Protocol copy();
 }

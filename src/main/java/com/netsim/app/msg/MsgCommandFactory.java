@@ -6,19 +6,28 @@ import com.netsim.app.msg.commands.Help;
 import com.netsim.app.msg.commands.Send;
 import com.netsim.utils.Logger;
 
+/**
+ * Factory for MSG application commands.
+ */
 public class MsgCommandFactory implements CommandFactory {
     private static final Logger logger = Logger.getInstance();
-    private static final String CLS = MsgCommandFactory.class.getSimpleName();
+    private static final String CLS    = MsgCommandFactory.class.getSimpleName();
 
     /**
-     * @throws IllegalArgumentException if no command was found
+     * Returns a Command instance matching the given identifier.
+     *
+     * @param cmd the command identifier (non-null)
+     * @return the matching Command
+     * @throws IllegalArgumentException if cmd is null or no matching command exists
      */
     @Override
     public Command get(String cmd) throws IllegalArgumentException {
         if (cmd == null) {
-            logger.error("[" + CLS + "] command identifier is null");
-            throw new IllegalArgumentException(CLS + ": command name cannot be null");
+            String msg = "command name cannot be null";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(CLS + ": " + msg);
         }
+
         switch (cmd.toLowerCase()) {
             case "help":
                 logger.info("[" + CLS + "] creating Help command");
@@ -27,8 +36,9 @@ public class MsgCommandFactory implements CommandFactory {
                 logger.info("[" + CLS + "] creating Send command");
                 return new Send();
             default:
-                logger.error("[" + CLS + "] no command found for identifier: " + cmd);
-                throw new IllegalArgumentException(CLS + ": no command found for \"" + cmd + "\"");
+                String msg = "no command found for \"" + cmd + "\"";
+                logger.error("[" + CLS + "] " + msg);
+                throw new IllegalArgumentException(CLS + ": " + msg);
         }
     }
 }

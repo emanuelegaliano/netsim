@@ -4,45 +4,55 @@ import java.io.Serializable;
 
 import com.netsim.addresses.Address;
 
+/**
+ * Abstract base for protocol data units (PDUs), encapsulating
+ * source and destination addresses.
+ */
 public abstract class PDU implements Serializable {
-    protected static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
+    /** Source address of this PDU */
     protected Address source;
+    /** Destination address of this PDU */
     protected Address destination;
 
     /**
-     * @param src the source address
-     * @param dst the destination address
+     * Constructs a PDU with the given source and destination addresses.
+     *
+     * @param src the source Address (non‐null)
+     * @param dst the destination Address (non‐null)
+     * @throws IllegalArgumentException if src or dst is null
      */
-    protected PDU(Address src, Address dst) {
+    protected PDU(Address src, Address dst) throws IllegalArgumentException {
         this.source = src;
         this.destination = dst;
     }
 
     /**
-     * @return the source address
+     * @return the source Address of this PDU
      */
     public Address getSource() {
         return this.source;
     }
 
     /**
-     * @return the destination address
+     * @return the destination Address of this PDU
      */
     public Address getDestination() {
         return this.destination;
     }
 
     /**
-     * This abstract method defines the header of the protocol payload
-     * @return the hader in raw byte array
+     * Builds and returns the protocol header bytes for this PDU.
+     *
+     * @return the header as a byte array
      */
     public abstract byte[] getHeader();
 
     /**
-     * This abstract method compute the whole protocol
-     * payload
-     * @return the whole payload in a raw byte array
+     * Serializes the entire PDU (header + payload) into bytes.
+     *
+     * @return the full PDU as a byte array
      */
     public abstract byte[] toByte();
 }

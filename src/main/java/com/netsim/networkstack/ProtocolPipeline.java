@@ -6,122 +6,137 @@ import java.util.List;
 
 import com.netsim.utils.Logger;
 
+/**
+ * Manages a stack of Protocols for encapsulation and decapsulation.
+ */
 public class ProtocolPipeline {
     private static final Logger logger = Logger.getInstance();
-      private final List<Protocol> stack;
+    private static final String CLS    = ProtocolPipeline.class.getSimpleName();
 
-      /**
-       * Creates an empty pipeline.
-       */
-      public ProtocolPipeline() {
-            this.stack = new ArrayList<>();
-            logger.info("[" + getClass().getSimpleName() + "] initialized empty pipeline");
-      }
+    private final List<Protocol> stack;
 
-      /**
-       * Pushes a protocol onto the top of the stack.
-       * @param protocol non-null Protocol to add
-       * @throws IllegalArgumentException if protocol is null
-       */
-      public void push(Protocol protocol) {
-            if (protocol == null) {
-                  logger.error("[" + getClass().getSimpleName() + "] push failed: protocol is null");
-                  throw new IllegalArgumentException("ProtocolPipeline: protocol cannot be null");
-            }
-            this.stack.add(0, protocol);
-            logger.info("[" + getClass().getSimpleName() + "] pushed protocol: " + protocol.getClass().getSimpleName());
-      }
+    /**
+     * Creates an empty pipeline.
+     */
+    public ProtocolPipeline() {
+        this.stack = new ArrayList<>();
+        logger.info("[" + CLS + "] initialized empty pipeline");
+    }
 
-      /**
-       * Pops the most recently pushed protocol.
-       * @return the popped Protocol
-       * @throws RuntimeException if the stack is empty
-       */
-      public Protocol pop() {
-            if (this.stack.isEmpty()) {
-                  logger.error("[" + getClass().getSimpleName() + "] pop failed: stack is empty");
-                  throw new RuntimeException("ProtocolPipeline: nothing to pop");
-            }
-            Protocol p = this.stack.remove(0);
-            logger.info("[" + getClass().getSimpleName() + "] popped protocol: " + p.getClass().getSimpleName());
-            return p;
-      }
+    /**
+     * Pushes a Protocol onto the top of the stack.
+     *
+     * @param protocol the Protocol to add (non-null)
+     * @throws IllegalArgumentException if protocol is null
+     */
+    public void push(Protocol protocol) throws IllegalArgumentException {
+        if (protocol == null) {
+            logger.error("[" + CLS + "] push failed: protocol is null");
+            throw new IllegalArgumentException("ProtocolPipeline: protocol cannot be null");
+        }
+        this.stack.add(0, protocol);
+        logger.info("[" + CLS + "] pushed protocol: " + protocol.getClass().getSimpleName());
+    }
 
-      /**
-       * Encapsulates data from top to bottom of the stack.
-       * @param data non-null, non-empty payload
-       * @return fully encapsulated data
-       */
-      public byte[] encapsulate(byte[] data) {
-            if (data == null || data.length == 0) {
-                  logger.error("[" + getClass().getSimpleName() + "] encapsulate failed: data is null or empty");
-                  throw new IllegalArgumentException("ProtocolPipeline: data cannot be null or empty");
-            }
-            logger.info("[" + getClass().getSimpleName() + "] starting encapsulation, initial length=" + data.length);
-            byte[] result = data;
-            for (Protocol proto : this.stack) {
-                  result = proto.encapsulate(result);
-                  logger.debug("[" + getClass().getSimpleName() + "] applied " +
-                              proto.getClass().getSimpleName() + ", new length=" + result.length);
-            }
-            logger.info("[" + getClass().getSimpleName() + "] encapsulation complete, final length=" + result.length);
-            return result;
-      }
+    /**
+     * Pops the most recently pushed Protocol.
+     *
+     * @return the popped Protocol
+     * @throws RuntimeException if the stack is empty
+     */
+    public Protocol pop() throws RuntimeException {
+        if (this.stack.isEmpty()) {
+            logger.error("[" + CLS + "] pop failed: stack is empty");
+            throw new RuntimeException("ProtocolPipeline: nothing to pop");
+        }
+        Protocol p = this.stack.remove(0);
+        logger.info("[" + CLS + "] popped protocol: " + p.getClass().getSimpleName());
+        return p;
+    }
 
-      /**
-       * Decapsulates data from bottom to top of the stack.
-       * @param data non-null, non-empty payload
-       * @return fully decapsulated data
-       */
-      public byte[] decapsulate(byte[] data) {
-            if (data == null || data.length == 0) {
-                  logger.error("[" + getClass().getSimpleName() + "] decapsulate failed: data is null or empty");
-                  throw new IllegalArgumentException("ProtocolPipeline: data cannot be null or empty");
-            }
-            logger.info("[" + getClass().getSimpleName() + "] starting decapsulation, initial length=" + data.length);
-            byte[] result = data;
-            List<Protocol> reversed = new ArrayList<>(this.stack);
-            Collections.reverse(reversed);
-            for (Protocol proto : reversed) {
-                  result = proto.decapsulate(result);
-                  logger.debug("[" + getClass().getSimpleName() + "] stripped " +
-                              proto.getClass().getSimpleName() + ", new length=" + result.length);
-            }
-            logger.info("[" + getClass().getSimpleName() + "] decapsulation complete, final length=" + result.length);
-            return result;
-      }
+    /**
+     * Encapsulates data through all Protocols in stack order.
+     *
+     * @param data the payload bytes to encapsulate (non-null, non-empty)
+     * @return fully encapsulated bytes
+     * @throws IllegalArgumentException if data is null or empty
+     */
+    public byte[] encapsulate(byte[] data) throws IllegalArgumentException {
+        if (data == null || data.length == 0) {
+            logger.error("[" + CLS + "] encapsulate failed: data is null or empty");
+            throw new IllegalArgumentException("ProtocolPipeline: data cannot be null or empty");
+        }
+        logger.info("[" + CLS + "] starting encapsulation, initial length=" + data.length);
+        byte[] result = data;
+        for (Protocol proto : this.stack) {
+            result = proto.encapsulate(result);
+            logger.debug("[" + CLS + "] applied " +
+                         proto.getClass().getSimpleName() + ", new length=" + result.length);
+        }
+        logger.info("[" + CLS + "] encapsulation complete, final length=" + result.length);
+        return result;
+    }
 
-      /**
-       * Returns how many protocols are currently in the stack.
-       */
-      public int size() {
-            int sz = this.stack.size();
-            logger.debug("[" + getClass().getSimpleName() + "] size() = " + sz);
-            return sz;
-      }
+    /**
+     * Decapsulates data through all Protocols in reverse stack order.
+     *
+     * @param data the payload bytes to decapsulate (non-null, non-empty)
+     * @return fully decapsulated bytes
+     * @throws IllegalArgumentException if data is null or empty
+     */
+    public byte[] decapsulate(byte[] data) throws IllegalArgumentException {
+        if (data == null || data.length == 0) {
+            logger.error("[" + CLS + "] decapsulate failed: data is null or empty");
+            throw new IllegalArgumentException("ProtocolPipeline: data cannot be null or empty");
+        }
+        logger.info("[" + CLS + "] starting decapsulation, initial length=" + data.length);
+        byte[] result = data;
+        List<Protocol> reversed = new ArrayList<>(this.stack);
+        Collections.reverse(reversed);
+        for (Protocol proto : reversed) {
+            result = proto.decapsulate(result);
+            logger.debug("[" + CLS + "] stripped " +
+                         proto.getClass().getSimpleName() + ", new length=" + result.length);
+        }
+        logger.info("[" + CLS + "] decapsulation complete, final length=" + result.length);
+        return result;
+    }
 
-      /**
-       * Checks whether the stack is empty.
-       * @return true if no protocols in the stack
-       */
-      public boolean isEmpty() {
-            boolean empty = this.stack.isEmpty();
-            logger.debug("[" + getClass().getSimpleName() + "] isEmpty() = " + empty);
-            return empty;
-      }
+    /**
+     * Returns the number of Protocols in the stack.
+     *
+     * @return the stack size
+     */
+    public int size() {
+        int sz = this.stack.size();
+        logger.debug("[" + CLS + "] size() = " + sz);
+        return sz;
+    }
 
-      /**
-       * Peeks at the top protocol without removing it.
-       * @return the top Protocol
-       * @throws RuntimeException if the stack is empty
-       */
-      public Protocol peek() {
-            if (this.stack.isEmpty()) {
-                  logger.error("[" + getClass().getSimpleName() + "] peek failed: stack is empty");
-                  throw new RuntimeException("ProtocolPipeline: stack is empty");
-            }
-            Protocol p = this.stack.get(0);
-            logger.debug("[" + getClass().getSimpleName() + "] peek() = " + p.getClass().getSimpleName());
-            return p;
-      }
+    /**
+     * Checks whether the stack is empty.
+     *
+     * @return true if no Protocols are in the stack
+     */
+    public boolean isEmpty() {
+        boolean empty = this.stack.isEmpty();
+        logger.debug("[" + CLS + "] isEmpty() = " + empty);
+        return empty;
+    }
+
+    /**
+     * Peeks at the top Protocol without removing it.
+     *
+     * @return the top Protocol
+     * @throws RuntimeException if the stack is empty
+     */
+    public Protocol peek() throws RuntimeException {
+        if (this.stack.isEmpty()) {
+            logger.error("[" + CLS + "] peek failed: stack is empty");
+            throw new RuntimeException("ProtocolPipeline: stack is empty");
+        }
+        Protocol p = this.stack.get(0);
+        logger.debug("[" + CLS + "] peek() = " + p.getClass().getSimpleName());
+        return p;
+    }
 }

@@ -4,48 +4,62 @@ import java.util.Arrays;
 import com.netsim.utils.Logger;
 
 /**
- * IPv4 address implementation.
+ * Concrete IPv4 address implementation.
+ * Supports parsing, common classifications, and subnet broadcast computation.
  */
 public class IPv4 extends IP {
     private static final Logger logger = Logger.getInstance();
-    private static final String CLS = IPv4.class.getSimpleName();
+    private static final String CLS    = IPv4.class.getSimpleName();
 
     /**
-     * Dotted‐decimal + mask string ctor.
+     * Constructs an IPv4 from dotted‐decimal address and mask string.
+     *
+     * @param addressString the IPv4 address (e.g. "192.168.0.1")
+     * @param maskString    the subnet mask (e.g. "255.255.255.0")
+     * @throws IllegalArgumentException if parsing fails
      */
-    public IPv4(String addressString, String maskString) {
+    public IPv4(String addressString, String maskString) throws IllegalArgumentException {
         super(addressString, maskString, 4);
-        logger.info("[" + CLS + "] constructed " + stringRepresentation() + " mask=" + maskString);
+        logger.info("[" + CLS + "] constructed " + this.stringRepresentation() + " mask=" + maskString);
     }
 
     /**
-     * Dotted‐decimal + prefix length ctor.
+     * Constructs an IPv4 from dotted‐decimal address and prefix length.
+     *
+     * @param addressString the IPv4 address (e.g. "192.168.0.1")
+     * @param maskPrefix    the subnet prefix length (0–32)
+     * @throws IllegalArgumentException if parsing fails
      */
-    public IPv4(String addressString, int maskPrefix) {
+    public IPv4(String addressString, int maskPrefix) throws IllegalArgumentException {
         super(addressString, maskPrefix, 4);
-        logger.info("[" + CLS + "] constructed " 
-                    + stringRepresentation() + "/" + maskPrefix);
+        logger.info("[" + CLS + "] constructed " + this.stringRepresentation() + "/" + maskPrefix);
     }
 
+    /**
+     * Parses a dotted‐decimal IPv4 string into 4 bytes.
+     *
+     * @param address the IPv4 address string
+     * @return a 4‐byte representation
+     * @throws IllegalArgumentException if format is invalid
+     */
     @Override
-    protected byte[] parse(String address) {
+    protected byte[] parse(String address) throws IllegalArgumentException {
         if (address == null) {
-            logger.error("[" + CLS + "] parse failed: address string is null");
-            throw new IllegalArgumentException("Address string cannot be null");
+            String msg = "parse failed: address string is null";
+            logger.error("[" + CLS + "] " + msg);
+            throw new IllegalArgumentException(msg);
         }
-
         String[] parts = address.trim().split("\\.", -1);
         if (parts.length != 4) {
             String msg = "Invalid IPv4 format, got " + parts.length + " parts in \"" + address + "\"";
             logger.error("[" + CLS + "] " + msg);
             throw new IllegalArgumentException(msg);
         }
-
         byte[] octets = new byte[4];
         for (int i = 0; i < 4; i++) {
             String part = parts[i];
             if (part.isEmpty()) {
-                String msg = "Octet #" + (i+1) + " is empty in \"" + address + "\"";
+                String msg = "Octet #" + (i + 1) + " is empty in \"" + address + "\"";
                 logger.error("[" + CLS + "] " + msg);
                 throw new IllegalArgumentException(msg);
             }
@@ -53,12 +67,12 @@ public class IPv4 extends IP {
             try {
                 val = Integer.parseInt(part);
             } catch (NumberFormatException e) {
-                String msg = "Octet #" + (i+1) + " not a valid integer: \"" + part + "\"";
+                String msg = "Octet #" + (i + 1) + " not a valid integer: \"" + part + "\"";
                 logger.error("[" + CLS + "] " + msg);
                 throw new IllegalArgumentException(msg, e);
             }
             if (val < 0 || val > 255) {
-                String msg = "Octet #" + (i+1) + " out of range (0–255): " + val;
+                String msg = "Octet #" + (i + 1) + " out of range (0–255): " + val;
                 logger.error("[" + CLS + "] " + msg);
                 throw new IllegalArgumentException(msg);
             }
@@ -70,14 +84,14 @@ public class IPv4 extends IP {
 
     @Override
     public boolean isLoopback() {
-        boolean result = isInSubnet("127.0.0.0", 8);
+        boolean result = this.isInSubnet("127.0.0.0", 8);
         logger.debug("[" + CLS + "] isLoopback() → " + result);
         return result;
     }
 
     @Override
     public boolean isMulticast() {
-        boolean result = isInSubnet("224.0.0.0", 4);
+        boolean result = this.isInSubnet("224.0.0.0", 4);
         logger.debug("[" + CLS + "] isMulticast() → " + result);
         return result;
     }
@@ -96,23 +110,23 @@ public class IPv4 extends IP {
 
     @Override
     public boolean isPrivate() {
-        boolean result = isInSubnet("10.0.0.0", 8)
-                      || isInSubnet("172.16.0.0", 12)
-                      || isInSubnet("192.168.0.0", 16);
+        boolean result = this.isInSubnet("10.0.0.0", 8)
+                      || this.isInSubnet("172.16.0.0", 12)
+                      || this.isInSubnet("192.168.0.0", 16);
         logger.debug("[" + CLS + "] isPrivate() → " + result);
         return result;
     }
 
     @Override
     public boolean isLinkLocal() {
-        boolean result = isInSubnet("169.254.0.0", 16);
+        boolean result = this.isInSubnet("169.254.0.0", 16);
         logger.debug("[" + CLS + "] isLinkLocal() → " + result);
         return result;
     }
 
     @Override
     public boolean isUnspecified() {
-        for (byte b : address) {
+        for (byte b : this.address) {
             if (b != 0) {
                 logger.debug("[" + CLS + "] isUnspecified() → false");
                 return false;
@@ -123,7 +137,7 @@ public class IPv4 extends IP {
     }
 
     @Override
-    public boolean isSubnet() {
+    public boolean isSubnet() throws IllegalStateException {
         int prefix = this.mask.getPrefix();
         if (prefix < 0 || prefix > 32) {
             String msg = "Invalid mask prefix: " + prefix;
@@ -143,27 +157,25 @@ public class IPv4 extends IP {
     }
 
     /**
-     * @return broadcast based on the current subnet (e.g. x.x.x.255)
+     * Computes the broadcast address for this subnet.
+     *
+     * @return the calculated subnet broadcast IPv4
      */
     public IPv4 subnetBroadcast() {
-        String[] ipParts = this.stringRepresentation().split("\\.");
+        String[] parts = this.stringRepresentation().split("\\.");
         int ipInt = 0;
         for (int i = 0; i < 4; i++) {
-            ipInt |= (Integer.parseInt(ipParts[i]) << (24 - (8 * i)));
+            ipInt |= (Integer.parseInt(parts[i]) << (24 - (8 * i)));
         }
-        int subnetMask = (mask.getPrefix() == 0)
-                       ? 0
-                       : (~0) << (32 - this.mask.getPrefix());
-        int broadcastInt = ipInt | ~subnetMask;
-
-        String bStr = String.format(
-            "%d.%d.%d.%d",
-            (broadcastInt >> 24) & 0xFF,
-            (broadcastInt >> 16) & 0xFF,
-            (broadcastInt >> 8) & 0xFF,
-            broadcastInt & 0xFF
+        int maskBits = (this.mask.getPrefix() == 0) ? 0 : (~0 << (32 - this.mask.getPrefix()));
+        int bInt = ipInt | ~maskBits;
+        String bStr = String.format("%d.%d.%d.%d",
+            (bInt >> 24) & 0xFF,
+            (bInt >> 16) & 0xFF,
+            (bInt >> 8)  & 0xFF,
+            bInt & 0xFF
         );
-        IPv4 bc = new IPv4(bStr, mask.getPrefix());
+        IPv4 bc = new IPv4(bStr, this.mask.getPrefix());
         logger.info("[" + CLS + "] subnetBroadcast() → " + bc.stringRepresentation());
         return bc;
     }

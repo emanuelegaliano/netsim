@@ -1,11 +1,15 @@
 package com.netsim.app;
 
+/**
+ * Factory interface for creating Command instances by identifier.
+ */
 public interface CommandFactory {
-      /**
-       * Using factory method, this method returns an
-       * instance of the desired Command through a string key
-       * @param cmd the key identifier for the method
-       * @return an instance of a command
-       */
-      Command get(String cmd);
+    /**
+     * Returns a Command instance corresponding to the given identifier.
+     *
+     * @param cmd the command identifier (non-null)
+     * @return the Command instance
+     * @throws IllegalArgumentException if cmd is null or no matching command exists
+     */
+    Command get(String cmd) throws IllegalArgumentException;
 }
