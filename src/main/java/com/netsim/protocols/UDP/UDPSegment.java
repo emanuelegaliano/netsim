@@ -178,4 +178,12 @@ public class UDPSegment extends PDU {
             return new UDPSegment(source, destination, sequenceNumber, payload);
       }
 
+      /**
+       * Returns the raw payload carried in this segment.
+       *
+       * @return a copy of the payload data
+       */
+      public byte[] getPayload() {
+      return this.payload.clone();
+      }
 }

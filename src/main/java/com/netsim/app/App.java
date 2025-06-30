@@ -62,4 +62,18 @@ public abstract class App {
       public NetworkNode getOwner() {
             return this.owner;
       }
+
+      /**
+       * Retrieves a Command by its name.
+       * 
+       * @param name the command name to look up (non-null)
+       * @return the Command if found, otherwise null
+       * @throws IllegalArgumentException if name is null
+       */
+      public Command getCommand(String name) {
+            if (name == null)
+                  throw new IllegalArgumentException(this.getClass().getSimpleName() + ": command name cannot be null");
+
+            return this.commands.get(name);
+      }
 }

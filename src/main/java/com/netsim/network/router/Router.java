@@ -56,7 +56,7 @@ public class Router extends NetworkNode {
                   return;
 
             IPv4Protocol newIp = new IPv4Protocol(
-                  ipProtocol.getSourceIP(),
+                  ipProtocol.getSource(),
                   dest,
                   ipProtocol.getIHL(),
                   ipProtocol.getTypeOfService(),

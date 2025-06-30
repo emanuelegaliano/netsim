@@ -24,17 +24,6 @@ public interface Protocol {
      */
     public byte[] decapsulate(byte[] lowerLayerPDU);
 
-    /**
-     * Method to set next protocol in the chain
-     * @param nextProtocol the next protocol
-     */
-    public void setNext(Protocol nextProtocol);
-    /**
-     * Method to set previous protocol in the chain
-     * @param previousProtocol the previous protocol
-     */
-    public void setPrevious(Protocol previousProtocol);
-
     /** @return address of source */
     public Address getSource();
 
