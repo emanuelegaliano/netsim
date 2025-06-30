@@ -35,9 +35,11 @@ public class RoutingInfoTest {
         new RoutingInfo(null, nextHop1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void constructorRejectsNullNextHop() {
-        new RoutingInfo(adapter1, null);
+    @Test
+    public void constructorAllowsNullNextHop() {
+        RoutingInfo info = new RoutingInfo(adapter1, null);
+        assertEquals(adapter1, info.getDevice());
+        assertNull(info.getNextHop());
     }
 
     @Test

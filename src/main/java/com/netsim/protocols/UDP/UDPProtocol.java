@@ -62,6 +62,9 @@ public class UDPProtocol implements Protocol {
             throw new IllegalArgumentException("UDP: received empty data");
 
         List<UDPSegment> segments = parseSegments(lowerLayerPDU);
+        if (segments.isEmpty())
+            throw new IllegalArgumentException("UDP: no valid segments found in input");
+
         segments.sort(Comparator.comparingInt(UDPSegment::getSequenceNumber));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -75,6 +78,7 @@ public class UDPProtocol implements Protocol {
 
         return baos.toByteArray();
     }
+
 
     private List<UDPSegment> parseSegments(byte[] data) {
         if (data == null)
@@ -121,6 +125,10 @@ public class UDPProtocol implements Protocol {
     @Override
     public Port getDestination() {
         return this.destinationPort;
+    }
+
+    public int getMSS() {
+        return this.MSS;
     }
 
     @Override

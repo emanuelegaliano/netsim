@@ -3,7 +3,7 @@ package com.netsim.network.router;
 import com.netsim.network.NetworkNodeBuilder;
 
 /**
- * Builder for creating {@link Router} instances.
+ * Builder for creating {@link RouterTest} instances.
  * <p>
  * Validates that the routing table, ARP table, and interfaces contain entries
  * before constructing the Router.
@@ -19,7 +19,7 @@ public class RouterBuilder extends NetworkNodeBuilder<Router> {
       }
 
       /**
-       * Builds and returns a {@link Router}.
+       * Builds and returns a {@link RouterTest}.
        * <p>
        * Ensures that routing table, ARP table, and interfaces are not empty.
        * </p>
