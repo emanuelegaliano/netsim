@@ -146,22 +146,23 @@ public class IPv4Protocol implements Protocol {
         return reassembled;
     }
 
-    public IPv4 extractSource(byte[] packet) {
-        if (packet == null || packet.length < 20)
-            throw new IllegalArgumentException("IPv4Protocol.extractSource: packet too short");
-
-        byte[] src = Arrays.copyOfRange(packet, 12, 16);
-        String dotted = String.format("%d.%d.%d.%d", src[0] & 0xFF, src[1] & 0xFF, src[2] & 0xFF, src[3] & 0xFF);
-        return new IPv4(dotted, 0);
+    public IPv4 extractDestination(byte[] packet) {
+        if (packet == null || packet.length < this.IHL * 4) {
+            throw new IllegalArgumentException(
+                "IPv4Protocol.extractDestination: packet too short"
+            );
+        }
+        // Non ricostruiamo l'indirizzo da zero, ma torniamo quello noto
+        return this.destination;
     }
 
-    public IPv4 extractDestination(byte[] packet) {
-        if (packet == null || packet.length < 20)
-            throw new IllegalArgumentException("IPv4Protocol.extractDestination: packet too short");
-
-        byte[] dst = Arrays.copyOfRange(packet, 16, 20);
-        String dotted = String.format("%d.%d.%d.%d", dst[0] & 0xFF, dst[1] & 0xFF, dst[2] & 0xFF, dst[3] & 0xFF);
-        return new IPv4(dotted, 0);
+    public IPv4 extractSource(byte[] packet) {
+        if (packet == null || packet.length < this.IHL * 4) {
+            throw new IllegalArgumentException(
+                "IPv4Protocol.extractSource: packet too short"
+            );
+        }
+        return this.source;
     }
 
     public Protocol copy() {

@@ -15,61 +15,71 @@ import com.netsim.table.RoutingTable;
 import com.netsim.utils.Logger;
 
 public class Router extends NetworkNode {
-      public Router(String name, RoutingTable routingTable, ArpTable arpTable, List<Interface> interfaces)
-      throws IllegalArgumentException {
-            super(name, routingTable, arpTable, interfaces);
-      }
+    private static final Logger logger = Logger.getInstance();
+    private final String CLS = this.getClass().getSimpleName();
 
-      public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) throws IllegalArgumentException {
-            if(destination == null || stack == null || data == null || data.length == 0)
-                  throw new IllegalArgumentException("Router: invalid arguments");
+    public Router(String name, RoutingTable routingTable, ArpTable arpTable, List<Interface> interfaces)
+            throws IllegalArgumentException {
+        super(name, routingTable, arpTable, interfaces);
+        logger.info("[" + CLS + "] initialized with " + interfaces.size() + " interface(s)");
+    }
 
-            Logger logger = Logger.getInstance();
-            RoutingInfo route;
-            try {
-                  // look up next-hop info
-                  route = this.getRoute(destination);
-            } catch(final RuntimeException e) {
-                  logger.error("Router does not know destination");
-                  logger.debug(e.getLocalizedMessage());
-                  return; // drop it
-            }
+    @Override
+    public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
+        if (destination == null || stack == null || data == null || data.length == 0) {
+            throw new IllegalArgumentException("Router: invalid arguments");
+        }
 
+        try {
+            RoutingInfo route = this.getRoute(destination);
             NetworkAdapter outAdapter = route.getDevice();
             outAdapter.send(stack, data);
-      }
+            logger.info("[" + CLS + "] forwarded packet to " + destination.stringRepresentation());
+        } catch (RuntimeException e) {
+            logger.error("[" + CLS + "] unknown destination: " + destination.stringRepresentation());
+            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
+        }
+    }
 
-      public void receive(ProtocolPipeline stack, byte[] packets) throws IllegalArgumentException {
-            if(stack == null || packets == null || packets.length == 0)
-                  throw new IllegalArgumentException("Router: invalid arguments");
+    @Override
+    public void receive(ProtocolPipeline stack, byte[] packets) {
+        if (stack == null || packets == null || packets.length == 0) {
+            throw new IllegalArgumentException("Router: invalid arguments");
+        }
 
-            Protocol p = stack.pop();
-            if(!(p instanceof IPv4Protocol))
-                  throw new RuntimeException("Router: expected ipv4 protocol");
+        Protocol p = stack.pop();
+        if (!(p instanceof IPv4Protocol)) {
+            logger.error("[" + CLS + "] expected IPv4Protocol but got " + p.getClass().getSimpleName());
+            throw new RuntimeException("Router: expected ipv4 protocol");
+        }
 
-            IPv4Protocol ipProtocol = (IPv4Protocol) p;
-            IPv4 dest = ipProtocol.extractDestination(packets);
-            byte[] payload = ipProtocol.decapsulate(packets);
+        IPv4Protocol ipProtocol = (IPv4Protocol) p;
+        IPv4 dest = ipProtocol.extractDestination(packets);
+        byte[] payload = ipProtocol.decapsulate(packets);
+        int oldTTL = ipProtocol.getTtl();
 
-            int oldTTL = ipProtocol.getTtl();
-            if(oldTTL == 0)
-                  return;
+        if (oldTTL == 0) {
+            logger.error("[" + CLS + "] dropped packet due to TTL=0");
+            return;
+        }
 
-            IPv4Protocol newIp = new IPv4Protocol(
-                  ipProtocol.getSource(),
-                  dest,
-                  ipProtocol.getIHL(),
-                  ipProtocol.getTypeOfService(),
-                  ipProtocol.getIdentification(),
-                  ipProtocol.getFlags(),
-                  oldTTL-1,
-                  ipProtocol.getProtocol(),
-                  ipProtocol.getMTU()
-            );
+        // decrement TTL and re-encapsulate
+        IPv4Protocol newIp = new IPv4Protocol(
+            ipProtocol.getSource(),
+            dest,
+            ipProtocol.getIHL(),
+            ipProtocol.getTypeOfService(),
+            ipProtocol.getIdentification(),
+            ipProtocol.getFlags(),
+            oldTTL - 1,
+            ipProtocol.getProtocol(),
+            ipProtocol.getMTU()
+        );
+        byte[] encapsulated = newIp.encapsulate(payload);
 
-            byte[] encapsulated = newIp.encapsulate(payload);
-
-            stack.push(newIp);
-            this.send(dest, stack, encapsulated);
-      }
+        stack.push(newIp);
+        logger.info("[" + CLS + "] received for " + dest.stringRepresentation() +
+                    ", TTL decremented from " + oldTTL + " to " + (oldTTL - 1));
+        this.send(dest, stack, encapsulated);
+    }
 }

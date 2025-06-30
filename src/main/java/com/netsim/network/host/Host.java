@@ -14,133 +14,101 @@ import com.netsim.table.RoutingInfo;
 import com.netsim.table.RoutingTable;
 import com.netsim.utils.Logger;
 
-/**
- * A Host node that runs a single App, and sends/receives
- * packets over a point-to-point DLL link.
- */
 public class Host extends NetworkNode {
-      private App runningApp;
+    private final Logger logger = Logger.getInstance();
+    private final String CLS = this.getClass().getSimpleName();
 
-      /**
-       * Constructs a Host with the given name, routing and ARP tables,
-       * and network interfaces.
-       *
-       * @param name          non-null host name
-       * @param routingTable  non-null routing table
-       * @param arpTable      non-null ARP table
-       * @param interfaces    non-null list of interfaces
-       * @throws IllegalArgumentException if any argument is null
-       */
-      public Host(String name, RoutingTable routingTable, ArpTable arpTable,List<Interface> interfaces) 
-      throws IllegalArgumentException {
-            super(name, routingTable, arpTable, interfaces);
-            this.runningApp = null;
-      }
+    private App runningApp;
 
-      /**
-       * Sets the application to run on this Host.
-       *
-       * @param newApp non-null App instance
-       * @throws IllegalArgumentException if newApp is null
-       */
-      public void setApp(App newApp) {
-            if(newApp == null) 
-                  throw new IllegalArgumentException("Host: app cannot be null");
-            this.runningApp = newApp;
-      }
+    public Host(String name, RoutingTable routingTable, ArpTable arpTable, List<Interface> interfaces)
+            throws IllegalArgumentException {
+        super(name, routingTable, arpTable, interfaces);
+        this.runningApp = null;
+        logger.info("[" + CLS + "] initialized with " + interfaces.size() + " interface(s)");
+    }
 
-      /**
-       * Starts the application assigned to this Host.
-       *
-       * @throws IllegalArgumentException if no App has been set
-       */
-      public void runApp() throws IllegalArgumentException {
-            if(this.runningApp == null) 
-                  throw new IllegalArgumentException("Host: no App set");
-            this.runningApp.start();
-      }
+    public void setApp(App newApp) {
+        if (newApp == null) {
+            logger.error("[" + CLS + "] cannot set null application");
+            throw new IllegalArgumentException(CLS + ": app cannot be null");
+        }
+        this.runningApp = newApp;
+        logger.info("[" + CLS + "] application set successfully");
+    }
 
-      public boolean isForMe(IPv4 destination) {
-            try {
-                  this.getInterface(destination);
-                  return true;
-            } catch(final RuntimeException e) {
-                  Logger.getInstance().debug(e.getLocalizedMessage());
-                  return false;
-            }
-      }
+    public void runApp() {
+        if (this.runningApp == null) {
+            logger.error("[" + CLS + "] no application set");
+            throw new IllegalArgumentException(CLS + ": no App set");
+        }
+        logger.info("[" + CLS + "] starting application");
+        this.runningApp.start();
+    }
 
-      /**
-       * Sends application data over the network stack:
-       * encapsulate in IP→DLL, frame it, and rely on adapter to deliver.
-       *
-       * @param destination non-null destination
-       * @param stack    non-null protocol pipeline (IP then above)
-       * @param data     non-null, non-empty application payload
-       * @throws IllegalArgumentException if any argument is invalid
-       */
-      public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
-            if(destination == null || stack == null || data == null || data.length == 0)
-                  throw new IllegalArgumentException("Host: invalid arguments");
+    public boolean isForMe(IPv4 destination) {
+        try {
+            this.getInterface(destination);
+            return true;
+        } catch (RuntimeException e) {
+            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
+            return false;
+        }
+    }
 
-            RoutingInfo route;
-            try {
-                  route = this.getRoute(destination);
-            } catch(final RuntimeException e) {
-                  Logger logger = Logger.getInstance();
-                  logger.error("Invalid IP");
-                  logger.debug(e.getLocalizedMessage());
-                  return;
-            }
+    public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
+        if (destination == null || stack == null || data == null || data.length == 0) {
+            logger.error("[" + CLS + "] invalid arguments to send");
+            throw new IllegalArgumentException(CLS + ": invalid arguments");
+        }
 
-            IPv4Protocol ipProto = new IPv4Protocol(
-                  this.getInterface(route.getDevice()).getIP(), 
-                  destination, 
-                  5,
-                  0,
-                  0,
-                  0,
-                  64, // not implemented yet, maybe in future
-                  0,
-                  this.getMTU()
-            );
+        RoutingInfo route;
+        try {
+            route = this.getRoute(destination);
+        } catch (RuntimeException e) {
+            logger.error("[" + CLS + "] routing failed for destination " + destination.stringRepresentation());
+            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
+            return;
+        }
 
-            byte[] encapsulated = ipProto.encapsulate(data);
-            stack.push(ipProto);
-            route.getDevice().send(stack, encapsulated);
-      }
+        IPv4Protocol ipProto = new IPv4Protocol(
+            this.getInterface(route.getDevice()).getIP(),
+            destination,
+            5, 0, 0, 0, 64, 0,
+            this.getMTU()
+        );
+        byte[] encapsulated = ipProto.encapsulate(data);
+        stack.push(ipProto);
 
-      /**
-       * Receives a raw DLL frame, strips DLL and IP headers,
-       * then hands the payload to the application.
-       *
-       * @param stack   non-null protocol pipeline (IP then above)
-       * @param frame   non-null, non-empty frame bytes
-       * @throws IllegalArgumentException if any argument is invalid
-       * @throws RuntimeException         if no App has been set
-       */
-      public void receive(ProtocolPipeline stack, byte[] packets) {
-            if(stack == null || packets == null ||  packets.length == 0)
-                  throw new IllegalArgumentException("Host: invalid arguments");
+        logger.info("[" + CLS + "] sending packet to " + destination.stringRepresentation());
+        route.getDevice().send(stack, encapsulated);
+    }
 
-            if(this.runningApp == null)
-                  throw new RuntimeException("Host: no application set");
+    public void receive(ProtocolPipeline stack, byte[] packets) {
+        if (stack == null || packets == null || packets.length == 0) {
+            logger.error("[" + CLS + "] invalid arguments to receive");
+            throw new IllegalArgumentException(CLS + ": invalid arguments");
+        }
+        if (this.runningApp == null) {
+            logger.error("[" + CLS + "] no application set");
+            throw new RuntimeException(CLS + ": no application set");
+        }
 
-            Protocol p = stack.pop();
-            if(!(p instanceof IPv4Protocol))
-                  throw new RuntimeException("Host: expected IPv4 protocol");
+        Protocol p = stack.pop();
+        if (!(p instanceof IPv4Protocol)) {
+            logger.error("[" + CLS + "] expected IPv4 protocol, got " + p.getClass().getSimpleName());
+            throw new RuntimeException(CLS + ": expected IPv4 protocol");
+        }
 
-            IPv4Protocol ipProtocol = (IPv4Protocol) p;
-            IPv4 destination = ipProtocol.extractDestination(packets);
+        IPv4Protocol ipProtocol = (IPv4Protocol) p;
+        IPv4 destination = ipProtocol.extractDestination(packets);
 
-            // checking if an interface with destination IP exist
-            if(!this.isForMe(destination)) {
-                  Logger logger = Logger.getInstance();
-                  logger.error("Packet not for Host " + this.name);
-                  return;
-            }
+        if (!this.isForMe(destination)) {
+            logger.error("[" + CLS + "] packet not for me (dest=" + destination.stringRepresentation() + ")");
+            return;
+        }
 
-            byte[] transport = ipProtocol.decapsulate(packets);
-            this.runningApp.receive(stack, transport);
-      }
+        byte[] transport = ipProtocol.decapsulate(packets);
+        logger.info("[" + CLS + "] received packet for " + destination.stringRepresentation());
+        this.runningApp.receive(stack, transport);
+    }
 }

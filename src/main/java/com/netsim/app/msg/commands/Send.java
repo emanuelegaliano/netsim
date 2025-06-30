@@ -6,44 +6,45 @@ import com.netsim.app.App;
 import com.netsim.app.Command;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.MSG.MSGProtocol;
+import com.netsim.utils.Logger;
 
-/**
- * Send command: wraps the user’s message in the MSGProtocol
- * and delegates to the client’s send(...) method.
- */
 public class Send extends Command {
+    private static final Logger logger = Logger.getInstance();
+
     public Send() {
         super("send");
     }
 
-    /**
-     * Execute the send command.
-     *
-     * @param app  the running MsgClient application
-     * @param args the message text to send (non-null, non-empty)
-     * @throws IllegalArgumentException if args is null or empty
-     * @throws RuntimeException         if app is not a MsgClient
-     */
+    @Override
     public void execute(App app, String args) {
-        if(args == null || args.isEmpty())
-            throw new IllegalArgumentException("send: message cannot be empty");
+        String cls = this.getClass().getSimpleName();
 
-        // 1) build an application‐level pipeline
-        ProtocolPipeline pipeline = new ProtocolPipeline();
+        if (args == null || args.isEmpty()) {
+            logger.error("[" + cls + "] Message cannot be null or empty");
+            throw new IllegalArgumentException(cls + ": message cannot be empty");
+        }
 
-        // 2) wrap the raw text in MSGProtocol
-        MSGProtocol msgProto = new MSGProtocol(app.getUsername());
-        byte[] raw = args.getBytes(StandardCharsets.UTF_8);
-        byte[] encapsulated = msgProto.encapsulate(raw);
-        pipeline.push(msgProto);
+        try {
+            // 1) build application‐level pipeline
+            ProtocolPipeline pipeline = new ProtocolPipeline();
 
-        // 3) hand off to the client’s send (which will add UDP, IP, DLL, etc)
-        app.send(pipeline, encapsulated);
+            // 2) wrap the raw text in MSGProtocol
+            MSGProtocol msgProto = new MSGProtocol(app.getUsername());
+            byte[] raw = args.getBytes(StandardCharsets.UTF_8);
+            byte[] encapsulated = msgProto.encapsulate(raw);
+            pipeline.push(msgProto);
+
+            // 3) hand off to the client’s send (which will add UDP, IP, DLL, etc)
+            app.send(pipeline, encapsulated);
+
+            logger.info("[" + cls + "] Message sent successfully by user " + app.getUsername());
+        } catch (RuntimeException e) {
+            logger.debug("[" + cls + "] Exception during send: " + e.getLocalizedMessage());
+            throw e;
+        }
     }
 
-    /**
-     * @return help text for the send command
-     */
+    @Override
     public String help() {
         return "send <message>    Send the given message to the server";
     }

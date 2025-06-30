@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import java.util.Properties;
-
 import java.io.InputStream;
 import java.io.IOException;
 
@@ -16,31 +15,37 @@ public class Logger {
     private static Logger instance = null;
     private final Path logFile;
     public final String fileName;
+    private final boolean logOnConsole;
 
     public static final String RESET = "\u001B[0m";
-    public static final String RED = "\u001B[31m";
+    public static final String RED   = "\u001B[31m";
     public static final String GREEN = "\u001B[32m";
-    public static final String YELLOW = "\u001B[33m";
-    public static final String BLUE = "\u001B[34m";
+    public static final String YELLOW= "\u001B[33m";
+    public static final String BLUE  = "\u001B[34m";
 
     private Logger() {
         Properties props = new Properties();
-        try {
-            InputStream input = Logger.class
-                                      .getClassLoader()
-                                      .getResourceAsStream("application.properties");
+        boolean consoleFlag = false;
 
-            if(input == null) {
-                System.err.println("Unable to load application properties");
-            } else {
+        try (InputStream input = Logger.class
+                                    .getClassLoader()
+                                    .getResourceAsStream("application.properties")) {
+
+            if (input != null) {
                 props.load(input);
-            }                 
+                consoleFlag = Boolean.parseBoolean(
+                    props.getProperty("LOG_ON_CONSOLE", "false").trim()
+                );
+            } else {
+                System.err.println("Unable to load application properties, defaulting LOG_ON_CONSOLE=false");
+            }
         } catch(IOException e) {
-            System.err.println("Unable to load application properties");
+            System.err.println("Unable to load application properties: " + e.getMessage());
         }
 
-        this.fileName = props.getProperty("LOG_FILE", "default.log");
-        this.logFile  = Paths.get(this.fileName);
+        this.logOnConsole = consoleFlag;
+        this.fileName     = props.getProperty("LOG_FILE", "default.log");
+        this.logFile      = Paths.get(this.fileName);
 
         this.cleanFile();
     }
@@ -67,7 +72,7 @@ public class Logger {
     /**
      * Log the message only in the log file
      * @param msg message to log
-    */
+     */
     public void log(String msg) {
         try {
             Files.writeString(
@@ -82,7 +87,7 @@ public class Logger {
     }
 
     /**
-     * This method returns the istance of the logger.
+     * This method returns the instance of the logger.
      * If the instance is null (no call yet) then instantiate it
      * and returns the instance
      * 
@@ -91,37 +96,42 @@ public class Logger {
     public static Logger getInstance() {
         if(instance == null) 
             instance = new Logger();
-
         return instance;
     }
 
     /**
-     * This method should be called when information need to be logged
-     * @param msg The info message to be logged
+     * Info‐level log. Always written to file; printed to console only
+     * if LOG_ON_CONSOLE=true.
      */
     public void info(String msg) {
         String logMsg = "LOGGER INFO: " + msg;
         this.log(logMsg);
-        System.out.println(GREEN + logMsg + RESET);
+        if (logOnConsole) {
+            System.out.println(GREEN + logMsg + RESET);
+        }
     }
 
     /**
-     * This method should be called when errors need to be logged
-     * @param err The error message to be logged
+     * Error‐level log. Always written to file; printed to stderr only
+     * if LOG_ON_CONSOLE=true.
      */
     public void error(String err) {
         String logMsg = "LOGGER ERROR: " + err;
         this.log(logMsg);
-        System.err.println(RED + logMsg + RESET);
+        if (logOnConsole) {
+            System.err.println(RED + logMsg + RESET);
+        }
     }
 
     /**
-     * This method should be called when debug message need to be logged
-     * @param msg The debug message to be logged
+     * Debug‐level log. Always written to file; printed to console only
+     * if LOG_ON_CONSOLE=true.
      */
     public void debug(String msg) {
         String logMsg = "LOGGER DEBUG: " + msg;
         this.log(logMsg);
-        System.out.println(BLUE + logMsg + RESET);
+        if (logOnConsole) {
+            System.out.println(BLUE + logMsg + RESET);
+        }
     }
 }

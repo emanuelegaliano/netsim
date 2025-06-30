@@ -15,83 +15,94 @@ import com.netsim.table.RoutingTable;
 import com.netsim.utils.Logger;
 
 public class Server<AppType extends App> extends NetworkNode {
-      private final AppType app;
+    private static final Logger logger = Logger.getInstance();
+    private final String CLS = this.getClass().getSimpleName();
 
-      public Server(String name, RoutingTable routingTable, ArpTable arpTable, List<Interface> interfaces, AppType app) 
-      throws IllegalArgumentException {
-            super(name, routingTable, arpTable, interfaces);
-            if(app == null)
-                  throw new IllegalArgumentException("Server: app is null");
+    private AppType app;
 
-            this.app = app;
-            this.app.start();
-      }
+    public Server(String name,
+                  RoutingTable routingTable,
+                  ArpTable arpTable,
+                  List<Interface> interfaces)
+            throws IllegalArgumentException {
+        super(name, routingTable, arpTable, interfaces);
+        logger.info("[" + CLS + "] initialized with " + interfaces.size() + " interface(s)");
+        this.app = null;
+    }
 
+    public void setApp(AppType app) {
+        if (app == null) {
+            logger.error("[" + CLS + "] attempt to set null App");
+            throw new IllegalArgumentException("Server: app cannot be null");
+        }
+        this.app = app;
+        this.app.start();
+        logger.info("[" + CLS + "] application set and started");
+    }
 
-      public boolean isForMe(IPv4 destination) {
-            try {
-                  this.getInterface(destination);
-                  return true;
-            } catch(final RuntimeException e) {
-                  Logger.getInstance().debug(e.getLocalizedMessage());
-                  return false;
-            }
-      }
+    public boolean isForMe(IPv4 destination) {
+        try {
+            this.getInterface(destination);
+            return true;
+        } catch (RuntimeException e) {
+            logger.debug("[" + CLS + "] isForMe check failed: " + e.getLocalizedMessage());
+            return false;
+        }
+    }
 
-      public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
-            if(destination == null || stack == null || data == null || data.length == 0)
-                  throw new IllegalArgumentException("Server: invalid arguments");
+    public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) {
+        if (destination == null || stack == null || data == null || data.length == 0) {
+            logger.error("[" + CLS + "] invalid arguments to send");
+            throw new IllegalArgumentException("Server: invalid arguments");
+        }
 
-            RoutingInfo route;
-            try {
-                  route = this.getRoute(destination);
-            } catch(final RuntimeException e) {
-                  Logger logger = Logger.getInstance();
-                  logger.error("Invalid IP");
-                  logger.debug(e.getLocalizedMessage());
-                  return;
-            }
-            
+        try {
+            RoutingInfo route = this.getRoute(destination);
             IPv4Protocol ipProto = new IPv4Protocol(
-                  this.getInterface(route.getDevice()).getIP(), 
-                  destination, 
-                  5,
-                  0,
-                  0,
-                  0,
-                  64, // not implemented yet, maybe in future
-                  0,
-                  this.getMTU()
+                this.getInterface(route.getDevice()).getIP(),
+                destination,
+                5, 0, 0, 0,
+                64, 0, this.getMTU()
             );
-
             byte[] encapsulated = ipProto.encapsulate(data);
             stack.push(ipProto);
+
+            logger.info("[" + CLS + "] sending packet to " + destination.stringRepresentation());
             route.getDevice().send(stack, encapsulated);
-      }
+        } catch (RuntimeException e) {
+            logger.error("[" + CLS + "] routing failed for " + destination.stringRepresentation());
+            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
+        }
+    }
 
-      public void receive(ProtocolPipeline stack, byte[] packets) {
-            if(stack == null || packets == null ||  packets.length == 0)
-                  throw new IllegalArgumentException("Server: invalid arguments");
+    public void receive(ProtocolPipeline stack, byte[] packets) {
+        if (stack == null || packets == null || packets.length == 0) {
+            logger.error("[" + CLS + "] invalid arguments to receive");
+            throw new IllegalArgumentException("Server: invalid arguments");
+        }
 
-            if(this.app == null)
-                  throw new RuntimeException("Server: no application set");
+        if (this.app == null) {
+            logger.error("[" + CLS + "] no application set to handle incoming packets");
+            throw new RuntimeException("Server: no application set");
+        }
 
-            Protocol p = stack.pop();
-            if(!(p instanceof IPv4Protocol))
-                  throw new RuntimeException("Server: expected IPv4 protocol");
+        Protocol p = stack.pop();
+        if (!(p instanceof IPv4Protocol)) {
+            logger.error("[" + CLS + "] expected IPv4Protocol but got " + p.getClass().getSimpleName());
+            throw new RuntimeException("Server: expected IPv4 protocol");
+        }
 
-            IPv4Protocol ipProtocol = (IPv4Protocol) p;
-            IPv4 destination = ipProtocol.extractDestination(packets);
+        IPv4Protocol ipProtocol = (IPv4Protocol) p;
+        IPv4 destination    = ipProtocol.extractDestination(packets);
 
-            // checking if an interface with destination IP exist
-            if(!this.isForMe(destination)) {
-                  Logger logger = Logger.getInstance();
-                  logger.error("Packet not for Server " + this.name);
-                  return; // drop
-            }
+        if (!isForMe(destination)) {
+            logger.error("[" + CLS + "] packet not for this server: dest=" + destination.stringRepresentation());
+            return;
+        }
 
-            byte[] transport = ipProtocol.decapsulate(packets);
-            this.app.receive(stack, transport);
-      }
-
+        byte[] transport = ipProtocol.decapsulate(packets);
+        logger.info("[" + CLS + "] received packet for " + destination.stringRepresentation() +
+                     ", handing up to App");
+        this.app.receive(stack, transport);
+    }
 }

@@ -32,21 +32,17 @@ public class ServerTest {
             app = new DummyApp();
       }
 
-
-      @Test(expected = IllegalArgumentException.class)
-      public void constructorThrowsIfAppIsNull() {
-            new Server<>( "srv", new RoutingTable(), new ArpTable(), Collections.singletonList(iface), null);
-      }
-
       @Test
       public void isForMeReturnsTrueWhenMatch() {
-            Server<DummyApp> server = new Server<>("srv", new RoutingTable(), new ArpTable(), Collections.singletonList(iface), app);
+            Server<DummyApp> server = new Server<>("srv", new RoutingTable(), new ArpTable(), Collections.singletonList(iface));
+            server.setApp(app);
             assertTrue(server.isForMe(new IPv4("192.168.1.1", 24)));
       }
 
       @Test
       public void isForMeReturnsFalseWhenNoMatch() {
-            Server<DummyApp> server = new Server<>("srv", new RoutingTable(), new ArpTable(), Collections.singletonList(iface), app);
+            Server<DummyApp> server = new Server<>("srv", new RoutingTable(), new ArpTable(), Collections.singletonList(iface));
+            server.setApp(app);
             assertFalse(server.isForMe(new IPv4("10.0.0.1", 24)));
       }
 

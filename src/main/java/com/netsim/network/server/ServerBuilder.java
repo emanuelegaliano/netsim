@@ -15,29 +15,11 @@ import com.netsim.network.NetworkNodeBuilder;
 public class ServerBuilder<AppType extends App>
       extends NetworkNodeBuilder<Server<AppType>> {
 
-      private AppType app;
-
       /**
        * Constructs a new ServerBuilder.
        */
       public ServerBuilder() {
             super();
-      }
-
-      /**
-       * Sets the application to run on the Server.
-       *
-       * @param app non‐null application instance
-       * @return this builder
-       * @throws IllegalArgumentException if app is null
-       */
-      public ServerBuilder<AppType> setApp(AppType app)
-      throws IllegalArgumentException {
-            if(app == null)
-                  throw new IllegalArgumentException(
-                  "ServerBuilder: app cannot be null");
-            this.app = app;
-            return this;
       }
 
       /**
@@ -55,9 +37,6 @@ public class ServerBuilder<AppType extends App>
             if(this.name == null)
                   throw new RuntimeException(
                   "ServerBuilder: name cannot be null");
-            if(this.app == null)
-                  throw new RuntimeException(
-                  "ServerBuilder: app must be set");
             if(this.routingTable.isEmpty())
                   throw new RuntimeException(
                   "ServerBuilder: routing table cannot be empty");
@@ -72,8 +51,7 @@ public class ServerBuilder<AppType extends App>
                   this.name,
                   this.routingTable,
                   this.arpTable,
-                  this.interfaces,
-                  this.app
+                  this.interfaces
             );
       }
 }

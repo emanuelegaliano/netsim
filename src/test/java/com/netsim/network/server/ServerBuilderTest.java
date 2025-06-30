@@ -34,8 +34,7 @@ public class ServerBuilderTest {
       @Test(expected = RuntimeException.class)
       public void buildFailsWithoutName() {
             ServerBuilder<DummyApp> builder = new ServerBuilder<>();
-            builder.setApp(new DummyApp())
-                  .build(); // should throw
+            builder.build(); // should throw
       }
 
       @Test(expected = RuntimeException.class)
@@ -48,9 +47,8 @@ public class ServerBuilderTest {
       @Test(expected = RuntimeException.class)
       public void buildFailsWithoutInterfaces() {
             ServerBuilder<DummyApp> builder = new ServerBuilder<>();
-            builder.setApp(new DummyApp())
-                  .setName("srv")
-                  .build(); // should throw
+            builder.setName("srv")
+                   .build(); // should throw
       }
 
       @Test(expected = RuntimeException.class)
@@ -59,10 +57,9 @@ public class ServerBuilderTest {
             NetworkAdapter adapter = new NetworkAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
             Interface iface = new Interface(adapter, new IPv4("192.168.0.2", 24));
 
-            builder.setApp(new DummyApp())
-                  .setName("srv")     
-                  .addInterface(iface)
-                  .build(); // should throw
+            builder.setName("srv")     
+                   .addInterface(iface)
+                   .build(); // should throw
       }
 
       @Test(expected = RuntimeException.class)
@@ -72,11 +69,11 @@ public class ServerBuilderTest {
             Interface iface = new Interface(adapter, new IPv4("192.168.0.2", 24));
 
                   
-            builder.setApp(new DummyApp())
-                  .setName("srv")
-                  .addInterface(iface)
-                  .addRoute(new IPv4("192.168.0.0", 24), "eth0", new IPv4("192.168.0.1", 24))
-                  .build(); // should throw
+            
+            builder.setName("srv")
+                   .addInterface(iface)
+                   .addRoute(new IPv4("192.168.0.0", 24), "eth0", new IPv4("192.168.0.1", 24))
+                   .build(); // should throw
       }
 
       @Test
@@ -85,12 +82,11 @@ public class ServerBuilderTest {
             NetworkAdapter adapter = new NetworkAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
             Interface iface = new Interface(adapter, new IPv4("192.168.0.2", 24));
 
-            Server<DummyApp> server = builder.setApp(new DummyApp())
-                                          .setName("srv")     
-                                          .addInterface(iface)
-                                          .addRoute(new IPv4("192.168.0.0", 24), "eth0", new IPv4("192.168.0.1", 24))
-                                          .addArpEntry(new IPv4("192.168.0.1", 24), new Mac("AA:BB:CC:DD:EE:02"))
-                                          .build();
+            Server<DummyApp> server = builder.setName("srv")     
+                                             .addInterface(iface)
+                                             .addRoute(new IPv4("192.168.0.0", 24), "eth0", new IPv4("192.168.0.1", 24))
+                                             .addArpEntry(new IPv4("192.168.0.1", 24), new Mac("AA:BB:CC:DD:EE:02"))
+                                             .build();
 
             assertEquals("srv", server.getName());
       }
