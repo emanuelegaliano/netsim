@@ -1,60 +1,101 @@
 package com.netsim.table;
 
-import java.util.HashMap;
-
 import com.netsim.addresses.Mac;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.utils.Logger;
 
+import java.util.HashMap;
+
+/**
+ * Table mapping MAC addresses to network adapters.
+ */
 public class MacTable implements NetworkTable<Mac, NetworkAdapter> {
-      private HashMap<Mac, NetworkAdapter> table;
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS = MacTable.class.getSimpleName();
 
-      public MacTable() {
-            this.table = new HashMap<>();
-      }
+    private final HashMap<Mac, NetworkAdapter> table;
 
-      /**
-       * @param key the Mac address to resolve
-       * @return the physical port associated with that mac address
-       * @throws IllegalArgumentException if key is null
-       * @throws NullPointerException if no entry exist for key
-       */
-      public NetworkAdapter lookup(Mac key) throws IllegalArgumentException, NullPointerException {
-            if(key == null)
-                  throw new IllegalArgumentException("MacTable: key cannot be null");
+    public MacTable() {
+        this.table = new HashMap<>();
+        logger.info("[" + CLS + "] initialized");
+    }
 
-            NetworkAdapter adapter = this.table.get(key);
-            if(adapter == null)
-                  throw new NullPointerException("MacTable: no network adapter associated with: " + key.stringRepresentation());
+    /**
+     * Looks up the NetworkAdapter associated with the given Mac key.
+     *
+     * @param key the Mac address to resolve
+     * @return the network adapter if present
+     * @throws IllegalArgumentException if key is null
+     * @throws NullPointerException     if no entry exists for key
+     */
+    public NetworkAdapter lookup(Mac key) {
+        if (key == null) {
+            logger.error("[" + CLS + "] lookup: key cannot be null");
+            throw new IllegalArgumentException("MacTable: key cannot be null");
+        }
+        NetworkAdapter adapter = table.get(key);
+        if (adapter == null) {
+            logger.error("[" + CLS + "] lookup failed for MAC " + key.stringRepresentation());
+            throw new NullPointerException(
+                "MacTable: no network adapter associated with: " + key.stringRepresentation()
+            );
+        }
+        logger.info("[" + CLS + "] lookup succeeded for MAC " + key.stringRepresentation() +
+                    " -> adapter " + adapter.getName());
+        return adapter;
+    }
 
-            return adapter;
-      }     
+    /**
+     * Adds or updates a mapping from Mac to NetworkAdapter.
+     *
+     * @param address Mac address of new entry
+     * @param adapter network adapter of new entry
+     * @throws IllegalArgumentException if either address or adapter is null
+     */
+    public void add(Mac address, NetworkAdapter adapter) {
+        if (address == null) {
+            logger.error("[" + CLS + "] add: address cannot be null");
+            throw new IllegalArgumentException("MacTable: address cannot be null");
+        }
+        if (adapter == null) {
+            logger.error("[" + CLS + "] add: adapter cannot be null");
+            throw new IllegalArgumentException("MacTable: adapter cannot be null");
+        }
+        table.put(address, adapter);
+        logger.info("[" + CLS + "] added entry: MAC " + address.stringRepresentation() +
+                    " -> adapter " + adapter.getName());
+    }
 
-      /**
-       * @param address mac address of new entry
-       * @param adapter network adapter of new entry
-       * @throws IllegalArgumentException if either address or port is null
-       */
-      public void add(Mac address, NetworkAdapter adapter) throws IllegalArgumentException {
-            if(address == null)
-                  throw new IllegalArgumentException("MacTable: address cannot be null");
-            if(adapter == null)
-                  throw new IllegalArgumentException("MacTable: adapter cannot be null");
-            
-            this.table.put(address, adapter);
-      }     
+    /**
+     * Removes the entry for the given Mac address.
+     *
+     * @param address Mac address to remove
+     * @throws IllegalArgumentException if address is null
+     * @throws NullPointerException     if no entry exists for that Mac
+     */
+    public void remove(Mac address) {
+        if (address == null) {
+            logger.error("[" + CLS + "] remove: address cannot be null");
+            throw new IllegalArgumentException("MacTable: address cannot be null");
+        }
+        NetworkAdapter removed = table.remove(address);
+        if (removed == null) {
+            logger.error("[" + CLS + "] remove failed: no adapter for MAC " +
+                         address.stringRepresentation());
+            throw new NullPointerException(
+                "MacTable: no network adapter associated with mac: " +
+                address.stringRepresentation()
+            );
+        }
+        logger.info("[" + CLS + "] removed entry for MAC " + address.stringRepresentation());
+    }
 
-      public void remove(Mac address) throws IllegalArgumentException, NullPointerException {
-            if(address == null)
-                  throw new IllegalArgumentException("MacTable: address cannot be null");
-
-            NetworkAdapter portCheck = this.table.remove(address);
-            if(portCheck == null)
-                  throw new NullPointerException(
-                        "MacTable: no network adapter associated with mac: " + address.stringRepresentation() 
-                  );
-      }
-
-      public boolean isEmpty() {
-            return this.table.isEmpty();
-      }
+    /**
+     * @return true if the table contains no entries
+     */
+    public boolean isEmpty() {
+        boolean empty = table.isEmpty();
+        logger.debug("[" + CLS + "] isEmpty = " + empty);
+        return empty;
+    }
 }

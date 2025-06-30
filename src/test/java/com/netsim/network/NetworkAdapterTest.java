@@ -63,6 +63,7 @@ public class NetworkAdapterTest {
         Node mockNode = new Node() {
             public void receive(ProtocolPipeline stack, byte[] pdu) {}
             public void send(IPv4 ip, ProtocolPipeline stack, byte[] pdu) {}  
+            public String getName() { return "mock"; }
         };
         adapter1.setOwner(mockNode);
         assertEquals(mockNode, adapter1.getNode());

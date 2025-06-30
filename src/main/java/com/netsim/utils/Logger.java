@@ -51,12 +51,21 @@ public class Logger {
     }
 
     /**
-     * Delete all the content in the
-     * file in application.properties
+     * Deletes (or creates) the log file and its parent directories.
      */
     private void cleanFile() {
         try {
-            Files.write(this.logFile, new byte[0]);
+            Path parent = logFile.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                Files.createDirectories(parent);
+            }
+            // create or truncate the file
+            Files.write(
+                logFile,
+                new byte[0],
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING
+            );
         } catch (IOException e) {
             System.err.println("Failed to clear log file " + this.fileName + ": " + e.getMessage());
         }

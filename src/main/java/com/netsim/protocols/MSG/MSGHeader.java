@@ -1,6 +1,7 @@
 package com.netsim.protocols.MSG;
 
 import com.netsim.networkstack.PDU;
+import com.netsim.utils.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -10,6 +11,9 @@ import java.util.Objects;
  * is just “name: message”.
  */
 public class MSGHeader extends PDU {
+      private static final Logger logger = Logger.getInstance();
+      private static final String CLS = MSGHeader.class.getSimpleName();
+
       private final String name;
       private final String message;
 
@@ -19,28 +23,37 @@ public class MSGHeader extends PDU {
        * @throws IllegalArgumentException if either argument is null
        */
       public MSGHeader(String name, String message) {
-            // we don’t need real Address here, so pass null
             super(null, null);
-            if(name == null || message == null) 
+            logger.info("[" + CLS + "] constructing header for name=\"" + name + "\" message=\"" + message + "\"");
+            if (name == null || message == null) {
+                  logger.error("[" + CLS + "] name or message is null");
                   throw new IllegalArgumentException("MSGHeader: name and message must be non-null");
-            
-                  this.name = name;
+            }
+            this.name = name;
             this.message = message;
       }
 
       /**
        * Returns just the name (without the “: message”).
        */
+      @Override
       public byte[] getHeader() {
-            return name.getBytes(StandardCharsets.UTF_8);
+            logger.debug("[" + CLS + "] getHeader()");
+            byte[] hdr = name.getBytes(StandardCharsets.UTF_8);
+            logger.info("[" + CLS + "] header length=" + hdr.length);
+            return hdr;
       }
 
       /**
        * Returns the full serialization “name: message”.
        */
+      @Override
       public byte[] toByte() {
+            logger.debug("[" + CLS + "] toByte()");
             String line = name + ": " + message;
-            return line.getBytes(StandardCharsets.UTF_8);
+            byte[] full = line.getBytes(StandardCharsets.UTF_8);
+            logger.info("[" + CLS + "] full PDU length=" + full.length);
+            return full;
       }
 
       /** @return the header name */
@@ -53,6 +66,7 @@ public class MSGHeader extends PDU {
             return message;
       }
 
+      @Override
       public boolean equals(Object o) {
             if (!(o instanceof MSGHeader)) return false;
             MSGHeader that = (MSGHeader) o;
@@ -60,6 +74,7 @@ public class MSGHeader extends PDU {
                   message.equals(that.message);
       }
 
+      @Override
       public int hashCode() {
             return Objects.hash(name, message);
       }

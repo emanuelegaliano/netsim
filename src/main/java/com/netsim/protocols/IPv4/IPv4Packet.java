@@ -4,12 +4,17 @@ import java.nio.ByteBuffer;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.networkstack.PDU;
+import com.netsim.utils.Logger;
+
 /**
  * Represents a minimal IPv4 datagram (base header, no options),
  * with TTL and Protocol fields expanded to 16 bits each,
  * and checksum not computed.
  */
 public class IPv4Packet extends PDU {
+      private static final Logger logger = Logger.getInstance();
+      private static final String CLS = IPv4Packet.class.getSimpleName();
+
       private final VersionIHL versionAndIHL;
       private final byte tos;
       private final short totalLength;
@@ -47,46 +52,53 @@ public class IPv4Packet extends PDU {
                         int fragmentOffset,
                         int ttl,
                         int protocol,
-                        byte[] payload) throws IllegalArgumentException {
-                  
+                        byte[] payload) {
             super(source, destination);
-            if (source == null || destination == null)
+            try {
+                  if (source == null || destination == null)
                   throw new IllegalArgumentException("IPv4Packet: source/destination cannot be null");
 
-            this.versionAndIHL = new VersionIHL(version, IHL);
+                  this.versionAndIHL = new VersionIHL(version, IHL);
 
-            if(typeOfService < 0 || typeOfService > 0xFF)
+                  if (typeOfService < 0 || typeOfService > 0xFF)
                   throw new IllegalArgumentException("IPv4Packet: TOS must be 0…255");
-            this.tos = (byte) typeOfService;
+                  this.tos = (byte) typeOfService;
 
-            if(totalLength < 0 || totalLength > 0xFFFF)
+                  if (totalLength < 0 || totalLength > 0xFFFF)
                   throw new IllegalArgumentException("IPv4Packet: totalLength must be 0…65535");
-            
-            this.totalLength = (short) totalLength;
+                  this.totalLength = (short) totalLength;
 
-            if(identification < 0 || identification > 0xFFFF) 
+                  if (identification < 0 || identification > 0xFFFF)
                   throw new IllegalArgumentException("IPv4Packet: identification must be 0…65535");
-            this.identification = (short) identification;
+                  this.identification = (short) identification;
 
-            if(flags < 0 || flags > 0x7)
+                  if (flags < 0 || flags > 0x7)
                   throw new IllegalArgumentException("IPv4Packet: flags must be 0…7");
-            
-            if(fragmentOffset < 0 || fragmentOffset > 0x1FFF)
+                  if (fragmentOffset < 0 || fragmentOffset > 0x1FFF)
                   throw new IllegalArgumentException("IPv4Packet: fragmentOffset must be 0…8191");
-            this.flagsAndFragmentOffset = (short) (((flags & 0x7) << 13)
-                                                | (fragmentOffset & 0x1FFF));
+                  this.flagsAndFragmentOffset = (short) (((flags & 0x7) << 13)
+                                                      | (fragmentOffset & 0x1FFF));
 
-            if(ttl < 0 || ttl > 0xFFFF) 
+                  if (ttl < 0 || ttl > 0xFFFF)
                   throw new IllegalArgumentException("IPv4Packet: TTL must be 0…65535");
-            this.ttl = (short) ttl;
+                  this.ttl = (short) ttl;
 
-            if(protocol < 0 || protocol > 0xFFFF)
+                  if (protocol < 0 || protocol > 0xFFFF)
                   throw new IllegalArgumentException("IPv4Packet: protocol must be 0…65535");
-            this.protocol = (short) protocol;
+                  this.protocol = (short) protocol;
 
-            if(payload == null || payload.length == 0) 
+                  if (payload == null || payload.length == 0)
                   throw new IllegalArgumentException("IPv4Packet: payload cannot be null or 0");
-            this.payload = payload;
+                  this.payload = payload;
+
+                  logger.info("[" + CLS + "] constructed: src=" 
+                              + source.stringRepresentation()
+                              + " dst=" + destination.stringRepresentation()
+                              + " ttl=" + this.ttl);
+            } catch (IllegalArgumentException e) {
+                  logger.error("[" + CLS + "] constructor error: " + e.getMessage());
+                  throw e;
+            }
       }
 
       /**
@@ -97,6 +109,7 @@ public class IPv4Packet extends PDU {
        * @return a byte[] of length IHL*4 (20 bytes when IHL=5)
        */
       public byte[] getHeader() {
+            logger.debug("[" + CLS + "] getHeader()");
             int headerLen = versionAndIHL.getIhl() * 4;
             ByteBuffer buf = ByteBuffer.allocate(headerLen);
             buf.put(versionAndIHL.toByte());
@@ -106,10 +119,10 @@ public class IPv4Packet extends PDU {
             buf.putShort(flagsAndFragmentOffset);
             buf.putShort(ttl);
             buf.putShort(protocol);
-            buf.put((this.getSource()).byteRepresentation());
-            buf.put((this.getDestination()).byteRepresentation());
+            buf.put(this.getSource().byteRepresentation());
+            buf.put(this.getDestination().byteRepresentation());
             byte[] header = buf.array();
-            
+            logger.debug("[" + CLS + "] header built, length=" + header.length);
             return header;
       }
 
@@ -120,9 +133,12 @@ public class IPv4Packet extends PDU {
        */
       @Override
       public byte[] toByte() {
-            byte[] headerBytes  = getHeader();
+            logger.info("[" + CLS + "] toByte()");
+            byte[] headerBytes = getHeader();
             ByteBuffer buf = ByteBuffer.allocate(headerBytes.length + payload.length);
             buf.put(headerBytes).put(payload);
-            return buf.array();
+            byte[] packet = buf.array();
+            logger.info("[" + CLS + "] serialized packet, total length=" + packet.length);
+            return packet;
       }
 }

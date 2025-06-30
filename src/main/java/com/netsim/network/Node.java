@@ -20,4 +20,7 @@ public interface Node {
        * @param data the war bytes received (must be non-null and non-empty)
        */
       public void receive(ProtocolPipeline protocols, byte[] data);
+            
+      /** @return name of the node */
+      public String getName();
 }

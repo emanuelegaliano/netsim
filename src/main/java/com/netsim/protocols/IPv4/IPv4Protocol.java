@@ -1,15 +1,19 @@
 package com.netsim.protocols.IPv4;
 
-import com.netsim.networkstack.Protocol;
-import com.netsim.addresses.IPv4;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
+
+import com.netsim.addresses.IPv4;
+import com.netsim.networkstack.Protocol;
+import com.netsim.utils.Logger;
 
 public class IPv4Protocol implements Protocol {
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS = IPv4Protocol.class.getSimpleName();
+
     private final IPv4 source;
     private final IPv4 destination;
     private final int version;
@@ -32,6 +36,10 @@ public class IPv4Protocol implements Protocol {
             int protocol,
             int MTU
     ) {
+        logger.info("[" + CLS + "] instantiating: src=" +
+                    (source != null ? source.stringRepresentation() : "null") +
+                    " dst=" + (destination != null ? destination.stringRepresentation() : "null") +
+                    " IHL=" + IHL + " TTL=" + ttl + " MTU=" + MTU);
         if (source == null || destination == null)
             throw new IllegalArgumentException("IP: source/destination cannot be null");
         if (IHL < 5 || IHL > 15)
@@ -59,7 +67,10 @@ public class IPv4Protocol implements Protocol {
         this.MTU = MTU;
     }
 
+    @Override
     public byte[] encapsulate(byte[] upperLayerPDU) {
+        logger.info("[" + CLS + "] encapsulate called, data length=" +
+                    (upperLayerPDU != null ? upperLayerPDU.length : 0));
         if (upperLayerPDU == null || upperLayerPDU.length == 0)
             throw new IllegalArgumentException("IP: upperLayerPDU cannot be null or empty");
 
@@ -102,10 +113,15 @@ public class IPv4Protocol implements Protocol {
             offsetBytes += thisFragmentDataLen;
         }
 
-        return out.toByteArray();
+        byte[] result = out.toByteArray();
+        logger.info("[" + CLS + "] encapsulate produced " + result.length + " bytes");
+        return result;
     }
 
+    @Override
     public byte[] decapsulate(byte[] lowerLayerPDU) {
+        logger.info("[" + CLS + "] decapsulate called, data length=" +
+                    (lowerLayerPDU != null ? lowerLayerPDU.length : 0));
         if (lowerLayerPDU == null || lowerLayerPDU.length == 0)
             throw new IllegalArgumentException("IP: lowerLayerPDU cannot be null or empty");
 
@@ -143,29 +159,31 @@ public class IPv4Protocol implements Protocol {
             System.arraycopy(f.data, 0, reassembled, f.offset, f.data.length);
         }
 
+        logger.info("[" + CLS + "] decapsulate reassembled to " + reassembled.length + " bytes");
         return reassembled;
     }
 
+    @Override
     public IPv4 extractDestination(byte[] packet) {
-        if (packet == null || packet.length < this.IHL * 4) {
-            throw new IllegalArgumentException(
-                "IPv4Protocol.extractDestination: packet too short"
-            );
-        }
-        // Non ricostruiamo l'indirizzo da zero, ma torniamo quello noto
+        logger.debug("[" + CLS + "] extractDestination()");
+        if (packet == null || packet.length < this.IHL * 4)
+            throw new IllegalArgumentException("IPv4Protocol.extractDestination: packet too short");
+        logger.debug("[" + CLS + "] destination=" + this.destination.stringRepresentation());
         return this.destination;
     }
 
+    @Override
     public IPv4 extractSource(byte[] packet) {
-        if (packet == null || packet.length < this.IHL * 4) {
-            throw new IllegalArgumentException(
-                "IPv4Protocol.extractSource: packet too short"
-            );
-        }
+        logger.debug("[" + CLS + "] extractSource()");
+        if (packet == null || packet.length < this.IHL * 4)
+            throw new IllegalArgumentException("IPv4Protocol.extractSource: packet too short");
+        logger.debug("[" + CLS + "] source=" + this.source.stringRepresentation());
         return this.source;
     }
 
+    @Override
     public Protocol copy() {
+        logger.debug("[" + CLS + "] copy()");
         return new IPv4Protocol(source, destination, IHL, typeOfService, identification, flags, ttl, protocol, MTU);
     }
 
