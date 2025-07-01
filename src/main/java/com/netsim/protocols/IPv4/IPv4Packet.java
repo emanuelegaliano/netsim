@@ -29,14 +29,14 @@ public class IPv4Packet extends PDU {
      * @param source         the IPv4 source address (non-null)
      * @param destination    the IPv4 destination address (non-null)
      * @param version        IP version (must be 4)
-     * @param IHL            Internet Header Length in 32-bit words (5…15)
-     * @param typeOfService  Type-Of-Service (0…255)
-     * @param totalLength    total length (header + payload) in bytes (0…65535)
-     * @param identification Identification field (0…65535)
-     * @param flags          flags bits (0…7)
-     * @param fragmentOffset fragment offset (0…8191)
-     * @param ttl            Time-To-Live (0…65535)
-     * @param protocol       upper-layer protocol number (0…65535)
+     * @param IHL            Internet Header Length in 32-bit words (5–15)
+     * @param typeOfService  Type-Of-Service (0–255)
+     * @param totalLength    total length (header + payload) in bytes (0–65535)
+     * @param identification Identification field (0–65535)
+     * @param flags          flags bits (0–7)
+     * @param fragmentOffset fragment offset (0–8191)
+     * @param ttl            Time-To-Live (0–65535)
+     * @param protocol       upper-layer protocol number (0–65535)
      * @param payload        the payload bytes (non-null, non-empty)
      * @throws IllegalArgumentException if any argument is null or out of range
      */
@@ -62,41 +62,41 @@ public class IPv4Packet extends PDU {
 
         if (typeOfService < 0 || typeOfService > 0xFF) {
             logger.error("[" + CLS + "] TOS out of range");
-            throw new IllegalArgumentException("IPv4Packet: TOS must be 0…255");
+            throw new IllegalArgumentException("IPv4Packet: TOS must be 0–255");
         }
         this.tos = (byte) typeOfService;
 
         if (totalLength < 0 || totalLength > 0xFFFF) {
             logger.error("[" + CLS + "] totalLength out of range");
-            throw new IllegalArgumentException("IPv4Packet: totalLength must be 0…65535");
+            throw new IllegalArgumentException("IPv4Packet: totalLength must be 0–65535");
         }
         this.totalLength = (short) totalLength;
 
         if (identification < 0 || identification > 0xFFFF) {
             logger.error("[" + CLS + "] identification out of range");
-            throw new IllegalArgumentException("IPv4Packet: identification must be 0…65535");
+            throw new IllegalArgumentException("IPv4Packet: identification must be 0–65535");
         }
         this.identification = (short) identification;
 
         if (flags < 0 || flags > 0x7) {
             logger.error("[" + CLS + "] flags out of range");
-            throw new IllegalArgumentException("IPv4Packet: flags must be 0…7");
+            throw new IllegalArgumentException("IPv4Packet: flags must be 0–7");
         }
         if (fragmentOffset < 0 || fragmentOffset > 0x1FFF) {
             logger.error("[" + CLS + "] fragmentOffset out of range");
-            throw new IllegalArgumentException("IPv4Packet: fragmentOffset must be 0…8191");
+            throw new IllegalArgumentException("IPv4Packet: fragmentOffset must be 0–8191");
         }
         this.flagsAndFragmentOffset = (short) (((flags & 0x7) << 13) | (fragmentOffset & 0x1FFF));
 
         if (ttl < 0 || ttl > 0xFFFF) {
             logger.error("[" + CLS + "] TTL out of range");
-            throw new IllegalArgumentException("IPv4Packet: TTL must be 0…65535");
+            throw new IllegalArgumentException("IPv4Packet: TTL must be 0–65535");
         }
         this.ttl = (short) ttl;
 
         if (protocol < 0 || protocol > 0xFFFF) {
             logger.error("[" + CLS + "] protocol out of range");
-            throw new IllegalArgumentException("IPv4Packet: protocol must be 0…65535");
+            throw new IllegalArgumentException("IPv4Packet: protocol must be 0–65535");
         }
         this.protocol = (short) protocol;
 

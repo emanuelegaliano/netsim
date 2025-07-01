@@ -47,6 +47,7 @@ public class Router extends NetworkNode {
     @Override
     public void send(IPv4 destination, ProtocolPipeline stack, byte[] data) throws IllegalArgumentException {
         if (destination == null || stack == null || data == null || data.length == 0) {
+            logger.error("Router.send: invalid arguments");
             throw new IllegalArgumentException("Router.send: invalid arguments");
         }
         try {
@@ -72,6 +73,7 @@ public class Router extends NetworkNode {
     public void receive(ProtocolPipeline stack, byte[] packets)
             throws IllegalArgumentException, RuntimeException {
         if (stack == null || packets == null || packets.length == 0) {
+            logger.error("Router.receive: invalid arguments");
             throw new IllegalArgumentException("Router.receive: invalid arguments");
         }
 

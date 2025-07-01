@@ -18,10 +18,10 @@ public class LoggerTest {
         String testMsg = "DIRECT_LOG_TEST";
 
         logger.log(testMsg);
-        Path logPath = Paths.get(logger.fileName);
+        Path logPath = Paths.get(logger.getFilename());
         List<String> lines = Files.readAllLines(logPath);
 
-        assertEquals("Message written must match", lines.getLast(), testMsg);
+        assertEquals("Message written must match", lines.get(lines.size()-1), testMsg);
     }
 
     @After

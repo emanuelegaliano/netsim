@@ -42,7 +42,7 @@ public class Mask extends Address {
                 boolean one = ((unsigned >> bit) & 1) == 1;
                 if (one) {
                     if (zeroFound) {
-                        String msg = "Non‐contiguous mask: " + maskString;
+                        String msg = "Non-contiguous mask: " + maskString;
                         logger.error("[" + CLS + "] " + msg);
                         throw new IllegalArgumentException(msg);
                     }
@@ -145,7 +145,7 @@ public class Mask extends Address {
                 throw new IllegalArgumentException(msg, e);
             }
             if (v < 0 || v > 255) {
-                String msg = "Octet #" + (i + 1) + " out of range (0–255): " + v;
+                String msg = "Octet #" + (i + 1) + " out of range (0-255): " + v;
                 logger.error("[" + CLS + "] " + msg);
                 throw new IllegalArgumentException(msg);
             }

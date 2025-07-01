@@ -2,6 +2,7 @@ package com.netsim.network.server;
 
 import com.netsim.app.App;
 import com.netsim.network.NetworkNodeBuilder;
+import com.netsim.utils.Logger;
 
 /**
  * Builder for creating {@link Server} instances.
@@ -15,11 +16,15 @@ import com.netsim.network.NetworkNodeBuilder;
 public class ServerBuilder<AppType extends App>
         extends NetworkNodeBuilder<Server<AppType>> {
 
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS    = ServerBuilder.class.getSimpleName();
+
     /**
      * Constructs a new ServerBuilder.
      */
     public ServerBuilder() {
         super();
+        logger.info("[" + CLS + "] initialized");
     }
 
     /**
@@ -32,23 +37,33 @@ public class ServerBuilder<AppType extends App>
     @Override
     public Server<AppType> build() throws RuntimeException {
         if (this.name == null) {
-            throw new RuntimeException("ServerBuilder: name cannot be null");
+            String msg = "name cannot be null";
+            logger.error("[" + CLS + "] " + msg);
+            throw new RuntimeException("ServerBuilder: " + msg);
         }
         if (this.routingTable.isEmpty()) {
-            throw new RuntimeException("ServerBuilder: routing table cannot be empty");
+            String msg = "routing table cannot be empty";
+            logger.error("[" + CLS + "] " + msg);
+            throw new RuntimeException("ServerBuilder: " + msg);
         }
         if (this.arpTable.isEmpty()) {
-            throw new RuntimeException("ServerBuilder: ARP table cannot be empty");
+            String msg = "ARP table cannot be empty";
+            logger.error("[" + CLS + "] " + msg);
+            throw new RuntimeException("ServerBuilder: " + msg);
         }
         if (this.interfaces.isEmpty()) {
-            throw new RuntimeException("ServerBuilder: interfaces must be at least one");
+            String msg = "interfaces must be at least one";
+            logger.error("[" + CLS + "] " + msg);
+            throw new RuntimeException("ServerBuilder: " + msg);
         }
 
-        return new Server<>(
+        Server<AppType> server = new Server<>(
             this.name,
             this.routingTable,
             this.arpTable,
             this.interfaces
         );
+        logger.info("[" + CLS + "] built Server \"" + this.name + "\" successfully");
+        return server;
     }
 }

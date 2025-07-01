@@ -15,11 +15,12 @@ import com.netsim.table.RoutingTable;
 import com.netsim.utils.Logger;
 
 /**
- * Represents an end‐host on the network capable of running a single App.
+ * Represents an end-host on the network capable of running a single App.
  */
 public class Host extends NetworkNode {
-    private final Logger logger = Logger.getInstance();
-    private final String CLS = this.getClass().getSimpleName();
+    private static final Logger logger = Logger.getInstance();
+    private static final String CLS    = Host.class.getSimpleName();
+
     private App runningApp;
 
     /**
@@ -29,7 +30,7 @@ public class Host extends NetworkNode {
      * @param routingTable  routing table (non-null)
      * @param arpTable      ARP table (non-null)
      * @param interfaces    attached interfaces (non-null, non-empty)
-     * @throws IllegalArgumentException if any argument is null or interfaces empty
+     * @throws IllegalArgumentException if any argument is null or interfaces is empty
      */
     public Host(String name,
                 RoutingTable routingTable,
@@ -38,7 +39,7 @@ public class Host extends NetworkNode {
     {
         super(name, routingTable, arpTable, interfaces);
         this.runningApp = null;
-        this.logger.info("[" + this.CLS + "] initialized with " + interfaces.size() + " interface(s)");
+        logger.info("[" + CLS + "] initialized with " + interfaces.size() + " interface(s)");
     }
 
     /**
@@ -49,11 +50,11 @@ public class Host extends NetworkNode {
      */
     public void setApp(App newApp) throws IllegalArgumentException {
         if (newApp == null) {
-            this.logger.error("[" + this.CLS + "] cannot set null application");
-            throw new IllegalArgumentException(this.CLS + ": app cannot be null");
+            logger.error("[" + CLS + "] cannot set null application");
+            throw new IllegalArgumentException(CLS + ": app cannot be null");
         }
         this.runningApp = newApp;
-        this.logger.info("[" + this.CLS + "] application set successfully");
+        logger.info("[" + CLS + "] application set successfully");
     }
 
     /**
@@ -63,10 +64,10 @@ public class Host extends NetworkNode {
      */
     public void runApp() throws IllegalArgumentException {
         if (this.runningApp == null) {
-            this.logger.error("[" + this.CLS + "] no application set");
-            throw new IllegalArgumentException(this.CLS + ": no App set");
+            logger.error("[" + CLS + "] no application set");
+            throw new IllegalArgumentException(CLS + ": no App set");
         }
-        this.logger.info("[" + this.CLS + "] starting application");
+        logger.info("[" + CLS + "] starting application");
         this.runningApp.start();
     }
 
@@ -81,7 +82,7 @@ public class Host extends NetworkNode {
             this.getInterface(destination);
             return true;
         } catch (RuntimeException e) {
-            this.logger.debug("[" + this.CLS + "] " + e.getLocalizedMessage());
+            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
             return false;
         }
     }
@@ -99,17 +100,17 @@ public class Host extends NetworkNode {
                      byte[] data) throws IllegalArgumentException
     {
         if (destination == null || stack == null || data == null || data.length == 0) {
-            this.logger.error("[" + this.CLS + "] invalid arguments to send");
-            throw new IllegalArgumentException(this.CLS + ": invalid arguments");
+            logger.error("[" + CLS + "] invalid arguments to send");
+            throw new IllegalArgumentException(CLS + ": invalid arguments");
         }
 
         RoutingInfo route;
         try {
             route = this.getRoute(destination);
         } catch (RuntimeException e) {
-            this.logger.error("[" + this.CLS + "] routing failed for destination " 
-                              + destination.stringRepresentation());
-            this.logger.debug("[" + this.CLS + "] " + e.getLocalizedMessage());
+            logger.error("[" + CLS + "] routing failed for destination " 
+                         + destination.stringRepresentation());
+            logger.debug("[" + CLS + "] " + e.getLocalizedMessage());
             return;
         }
 
@@ -127,7 +128,7 @@ public class Host extends NetworkNode {
         byte[] encapsulated = ipProto.encapsulate(data);
         stack.push(ipProto);
 
-        this.logger.info("[" + this.CLS + "] sending packet to " + destination.stringRepresentation());
+        logger.info("[" + CLS + "] sending packet to " + destination.stringRepresentation());
         route.getDevice().send(stack, encapsulated);
     }
 
@@ -143,32 +144,32 @@ public class Host extends NetworkNode {
             throws IllegalArgumentException, RuntimeException
     {
         if (stack == null || packets == null || packets.length == 0) {
-            this.logger.error("[" + this.CLS + "] invalid arguments to receive");
-            throw new IllegalArgumentException(this.CLS + ": invalid arguments");
+            logger.error("[" + CLS + "] invalid arguments to receive");
+            throw new IllegalArgumentException(CLS + ": invalid arguments");
         }
         if (this.runningApp == null) {
-            this.logger.error("[" + this.CLS + "] no application set");
-            throw new RuntimeException(this.CLS + ": no application set");
+            logger.error("[" + CLS + "] no application set");
+            throw new RuntimeException(CLS + ": no application set");
         }
 
         Protocol p = stack.pop();
         if (!(p instanceof IPv4Protocol)) {
-            this.logger.error("[" + this.CLS + "] expected IPv4 protocol, got "
-                              + p.getClass().getSimpleName());
-            throw new RuntimeException(this.CLS + ": expected IPv4 protocol");
+            logger.error("[" + CLS + "] expected IPv4 protocol, got "
+                         + p.getClass().getSimpleName());
+            throw new RuntimeException(CLS + ": expected IPv4 protocol");
         }
         IPv4Protocol ipProtocol = (IPv4Protocol) p;
         IPv4 destination = ipProtocol.extractDestination(packets);
 
         if (!this.isForMe(destination)) {
-            this.logger.error("[" + this.CLS + "] packet not for me (dest=" 
-                              + destination.stringRepresentation() + ")");
+            logger.error("[" + CLS + "] packet not for me (dest=" 
+                         + destination.stringRepresentation() + ")");
             return;
         }
 
         byte[] transport = ipProtocol.decapsulate(packets);
-        this.logger.info("[" + this.CLS + "] received packet for " 
-                         + destination.stringRepresentation());
+        logger.info("[" + CLS + "] received packet for " 
+                    + destination.stringRepresentation());
         this.runningApp.receive(stack, transport);
     }
 }
