@@ -18,11 +18,12 @@ import com.netsim.utils.Logger;
  * registers new users, and routes messages to recipients.
  */
 public class MsgServer extends App {
-    private static final Logger         logger      = Logger.getInstance();
-    private static final String         CLS         = MsgServer.class.getSimpleName();
-    private final        Map<String,IPv4> users      = new HashMap<>();
-    private              IPv4          pendingDest;
-    private              MSGProtocol   lastMsgProto;
+    private static final Logger        logger      = Logger.getInstance();
+    private static final String        CLS         = MsgServer.class.getSimpleName();
+
+    private final Map<String, IPv4>    users       = new HashMap<>();
+    private IPv4                       pendingDest;
+    private MSGProtocol                lastMsgProto;
 
     /**
      * Creates a new MsgServer bound to the given NetworkNode.
@@ -31,10 +32,12 @@ public class MsgServer extends App {
      * @throws IllegalArgumentException if node is null
      */
     public MsgServer(NetworkNode node) throws IllegalArgumentException {
-        super("msg",
-              "<no CLI commands on server>",
-              new MsgCommandFactory(),
-              node);
+        super(
+            "msg",
+            "<no CLI commands on server>",
+            new MsgCommandFactory(),
+            node
+        );
         if (node == null) {
             String msg = "node cannot be null";
             logger.error("[" + CLS + "] " + msg);
@@ -61,19 +64,19 @@ public class MsgServer extends App {
     public void receive(ProtocolPipeline stack, byte[] data)
             throws IllegalArgumentException, RuntimeException {
         logger.info("[" + CLS + "] receive called");
-        this.validateArgs(stack, data);
+        validateArgs(stack, data);
 
-        byte[] afterUdp = this.stripUDP(stack, data);
-        byte[] afterMsg = this.stripMSG(stack, afterUdp);
+        byte[] afterUdp = stripUDP(stack, data);
+        byte[] afterMsg = stripMSG(stack, afterUdp);
 
-        String user    = this.lastMsgProto.getUser();
+        String user    = lastMsgProto.getUser();
         String payload = new String(afterMsg, StandardCharsets.UTF_8);
         logger.info("[" + CLS + "] message from user \"" + user + "\": " + payload);
 
-        if (!this.users.containsKey(user)) {
-            this.register(user, payload);
+        if (!users.containsKey(user)) {
+            register(user, payload);
         } else {
-            this.route(user, payload);
+            route(user, payload);
         }
     }
 
@@ -89,23 +92,26 @@ public class MsgServer extends App {
     public void send(ProtocolPipeline stack, byte[] data)
             throws IllegalArgumentException, RuntimeException {
         logger.info("[" + CLS + "] send called");
-        this.validateArgs(stack, data);
-        if (this.pendingDest == null) {
+        validateArgs(stack, data);
+        if (pendingDest == null) {
             String msg = "no destination set";
             logger.error("[" + CLS + "] " + msg);
             throw new RuntimeException("MsgServerApp: " + msg);
         }
 
-        NetworkNode node = this.getOwner();
+        NetworkNode node = getOwner();
         int segmentSize  = node.getMTU() - 20 - 20;
-        UDPProtocol udp = new UDPProtocol(segmentSize,
-                                          node.randomPort(),
-                                          MSGProtocol.port());
+        UDPProtocol udp = new UDPProtocol(
+            segmentSize,
+            node.randomPort(),
+            MSGProtocol.port()
+        );
         byte[] udpBytes = udp.encapsulate(data);
+
         stack.push(udp);
-        logger.info("[" + CLS + "] sending UDP to " + this.pendingDest.stringRepresentation());
-        node.send(this.pendingDest, stack, udpBytes);
-        this.pendingDest = null;
+        logger.info("[" + CLS + "] sending UDP to " + pendingDest.stringRepresentation());
+        node.send(pendingDest, stack, udpBytes);
+        pendingDest = null;
     }
 
     // ─── internals ─────────────────────────────────────────────────────────────
@@ -113,6 +119,8 @@ public class MsgServer extends App {
     /**
      * Validates pipeline and data.
      *
+     * @param stack the protocol pipeline
+     * @param data  the bytes to validate
      * @throws IllegalArgumentException if stack or data invalid
      */
     private void validateArgs(ProtocolPipeline stack, byte[] data)
@@ -127,6 +135,8 @@ public class MsgServer extends App {
     /**
      * Pops and decapsulates UDP from frame.
      *
+     * @param stack the protocol pipeline
+     * @param frame the raw frame bytes
      * @return the inner payload bytes
      * @throws RuntimeException if top of stack is not UDPProtocol
      */
@@ -142,6 +152,8 @@ public class MsgServer extends App {
     /**
      * Pops and decapsulates MSG from UDP payload.
      *
+     * @param stack      the protocol pipeline
+     * @param udpPayload the UDP payload bytes
      * @return the inner message bytes
      * @throws RuntimeException if top of stack is not MSGProtocol
      */
@@ -151,8 +163,8 @@ public class MsgServer extends App {
             String msg = "expected MSG";
             throw new RuntimeException("MsgServerApp: " + msg);
         }
-        this.lastMsgProto = (MSGProtocol) p;
-        return this.lastMsgProto.decapsulate(udpPayload);
+        lastMsgProto = (MSGProtocol) p;
+        return lastMsgProto.decapsulate(udpPayload);
     }
 
     /**
@@ -165,20 +177,20 @@ public class MsgServer extends App {
     private void register(String user, String payload) {
         logger.info("[" + CLS + "] registering user \"" + user + "\" with IP \"" + payload + "\"");
         try {
-            int mask = this.getOwner().getInterfaces().get(0).getIP().getMask();
+            int mask = getOwner().getInterfaces().get(0).getIP().getMask();
             IPv4 ip = new IPv4(payload, mask);
-            this.users.put(user, ip);
+            users.put(user, ip);
 
             ProtocolPipeline pipeline = new ProtocolPipeline();
-            MSGProtocol replyProto = new MSGProtocol(this.getOwner().getName());
+            MSGProtocol replyProto = new MSGProtocol(getOwner().getName());
             byte[] confirmation = "registrazione effettuata".getBytes(StandardCharsets.UTF_8);
             byte[] framed       = replyProto.encapsulate(confirmation);
             pipeline.push(replyProto);
 
-            this.pendingDest = ip;
-            this.send(pipeline, framed);
+            pendingDest = ip;
+            send(pipeline, framed);
 
-            this.printAppMessage("Registered " + user + " at " + ip.stringRepresentation() + "\n");
+            printAppMessage("Registered " + user + " at " + ip.stringRepresentation() + "\n");
             logger.info("[" + CLS + "] user \"" + user + "\" registered at " + ip.stringRepresentation());
         } catch (Exception e) {
             String msg = "invalid IP format for registration: " + payload;
@@ -189,11 +201,10 @@ public class MsgServer extends App {
     }
 
     /**
-     * Routes a message from sender to recipient.
+     * Routes a message from sender to recipient, or responds "utente non trovato".
      *
      * @param sender  the original sender username
      * @param payload the "recipient:message" payload
-     * @throws RuntimeException if payload malformed or recipient unknown
      */
     private void route(String sender, String payload) {
         logger.info("[" + CLS + "] routing from \"" + sender + "\": " + payload);
@@ -206,16 +217,30 @@ public class MsgServer extends App {
 
         String recipient = payload.substring(0, sep);
         String body      = payload.substring(sep + 1);
-        IPv4 destIp      = this.users.get(recipient);
+        IPv4 destIp      = users.get(recipient);
 
         if (destIp == null) {
-            String msg = "unknown recipient: " + recipient;
-            logger.error("[" + CLS + "] " + msg);
-            throw new RuntimeException("MsgServerApp: " + msg);
+            // destinatario non conosciuto → rispondiamo al mittente
+            logger.error("[" + CLS + "] unknown recipient: " + recipient);
+
+            IPv4 senderIp = users.get(sender);
+
+            ProtocolPipeline pipeline = new ProtocolPipeline();
+            MSGProtocol replyProto = new MSGProtocol(getOwner().getName());
+            byte[] errorMsg  = "utente non trovato".getBytes(StandardCharsets.UTF_8);
+            byte[] framedErr = replyProto.encapsulate(errorMsg);
+            pipeline.push(replyProto);
+
+            pendingDest = senderIp;
+            send(pipeline, framedErr);
+
+            logger.info("[" + CLS + "] sent 'utente non trovato' to " + sender);
+            return;
         }
 
-        this.pendingDest = destIp;
-        this.setUsername(sender);
+        // destinazione valida → inoltro normale
+        pendingDest = destIp;
+        setUsername(sender);
         logger.info("[" + CLS + "] will forward to " + recipient + "@" + destIp.stringRepresentation());
 
         Command sendCmd = this.commands.get("send");

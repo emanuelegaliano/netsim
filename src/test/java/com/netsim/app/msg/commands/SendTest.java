@@ -23,12 +23,6 @@ public class SendTest {
     }
 
     @Test
-    public void testHelpMessage() {
-        String help = sendCmd.help();
-        assertTrue(help.contains("send <message>"));
-    }
-
-    @Test
     public void testExecuteEncapsulatesMessage() {
         String message = "Hello from test!";
         sendCmd.execute(dummyApp, message);

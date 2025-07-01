@@ -67,7 +67,7 @@ public class Send extends Command {
      */
     @Override
     public String help() {
-        return "send <message>    Send the given message to the server";
+        return "send <user>:<message>    Send the given message to the user using the server";
     }
 
     /**
