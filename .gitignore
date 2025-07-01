@@ -16,9 +16,6 @@ application.properties
 # gitignore
 .gitignore
 
-# vscode
-/.vscode/
-
-
-# idea
-/.idea/
+# IDE folders
+.vscode/
+.idea/
