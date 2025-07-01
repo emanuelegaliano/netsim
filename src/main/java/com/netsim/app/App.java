@@ -35,6 +35,7 @@ public abstract class App {
         this.usage = usage;
         this.commands = factory;
         this.owner = node;
+        this.username = null;
         logger.info("[" + this.CLS + "] initialized App \"" + this.name + "\" on node: "
             + (this.owner != null ? this.owner.getName() : "null"));
     }
@@ -83,7 +84,30 @@ public abstract class App {
      * @param message the message to print (may be empty)
      */
     public void printAppMessage(String message) {
-        System.out.println(this.name + ": " + message);
+        System.out.print("<< **");
+
+        if (this.username != null) {
+            System.out.print(this.username + " ");
+        }
+
+        System.out.println(this.name + "** " + message);
+        logger.info("[" + this.CLS + "] printed message: " + message.replace("\n", "\\n"));
+    }
+
+        /**
+     * Prints a message to the console prefixed by the App’s name,
+     * wiithou \n
+     *
+     * @param message the message to print (may be empty)
+     */
+    public void printAppMessageInLine(String message) {
+        System.out.print(">> **");
+
+        if (this.username != null) {
+            System.out.print(this.username + " ");
+        }
+
+        System.out.print(this.name + "** " + message);
         logger.info("[" + this.CLS + "] printed message: " + message.replace("\n", "\\n"));
     }
 

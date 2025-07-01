@@ -58,13 +58,17 @@ public class MsgClient extends App {
      */
     @Override
     public void start() {
-        System.out.println("Welcome to " + this.name);
-        this.askName();
+        this.printAppMessage("Welcome to " + this.name);
+
+        if (this.username == null) {
+            this.askName();
+        }
+
         this.printAppMessage("Hello " + this.username + "\n");
         logger.info("[" + CLS + "] started for user: " + this.username);
 
         while (true) {
-            this.printAppMessage("Write the command (type help for a list of commands): ");
+            this.printAppMessageInLine("Write the command (type help for a list of commands): ");
             String line = this.input.nextLine();
             String[] parts = line.split("\\s+", 2);
             String cmdIdentifier = parts[0];
@@ -121,7 +125,7 @@ public class MsgClient extends App {
             // 3) deliver to user
             String sender  = msgProto.getUser();
             String message = new String(payloadBytes, StandardCharsets.UTF_8);
-            this.printAppMessage(sender + ": " + message + "\n");
+            this.printAppMessage("from " + sender + ": " + message + "\n");
             logger.info("[" + CLS + "] received message from: " + sender);
 
         } catch (RuntimeException e) {
@@ -168,5 +172,24 @@ public class MsgClient extends App {
             logger.debug("[" + CLS + "] send failed: " + e.getLocalizedMessage());
             throw e;
         }
+    }
+
+    /**
+     * Registers this client with the server by sending its own IP address.
+     *
+     * @throws IllegalArgumentException if the send command arguments are invalid
+     * @throws RuntimeException         if an error occurs during registration
+     */
+    public void register() throws IllegalArgumentException, RuntimeException {
+        // get the first interface's IP address as the registration payload
+        String myIp = this.owner.getInterfaces().get(0).getIP().stringRepresentation();
+
+        // build and execute the "send" command
+        MsgCommandFactory factory = new MsgCommandFactory();
+        Command sendCmd = factory.get("send");
+
+        logger.info("[" + CLS + "] registering with server, sending IP " + myIp);
+        sendCmd.execute(this, myIp);
+        logger.info("[" + CLS + "] registration message sent successfully");
     }
 }
