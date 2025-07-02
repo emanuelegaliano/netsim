@@ -135,7 +135,7 @@ public class ProtocolPipeline {
             logger.error("[" + CLS + "] peek failed: stack is empty");
             throw new RuntimeException("ProtocolPipeline: stack is empty");
         }
-        Protocol p = this.stack.get(0);
+        Protocol p = this.stack.get(0).copy();
         logger.debug("[" + CLS + "] peek() = " + p.getClass().getSimpleName());
         return p;
     }
