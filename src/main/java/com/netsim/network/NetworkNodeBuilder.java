@@ -82,7 +82,7 @@ public abstract class NetworkNodeBuilder<T extends NetworkNode> {
     public NetworkNodeBuilder<T> addRoute(IPv4 subnet,
                                           String adapterName,
                                           IPv4 nextHop) throws IllegalArgumentException {
-        if (subnet == null || adapterName == null || nextHop == null) {
+        if (subnet == null || adapterName == null) {
             logger.error("[" + CLS + "] route arguments cannot be null");
             throw new IllegalArgumentException(CLS + ": arguments cannot be null");
         }
@@ -95,10 +95,15 @@ public abstract class NetworkNodeBuilder<T extends NetworkNode> {
                     CLS + ": no interface named " + adapterName);
             });
         this.routingTable.add(subnet, new RoutingInfo(iface.getAdapter(), nextHop));
-        logger.info("[" + CLS + "] route added: subnet="
+        String msg = "[" + CLS + "] route added: subnet="
             + subnet.stringRepresentation()
             + ", adapter=" + adapterName
-            + ", nextHop=" + nextHop.stringRepresentation());
+            + ", nextHop=";
+        if(nextHop == null) 
+            msg += "null";
+        else
+            msg += nextHop.stringRepresentation();
+        logger.info(msg);
         return this;
     }
 
