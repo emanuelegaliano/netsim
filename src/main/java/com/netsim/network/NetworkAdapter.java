@@ -102,7 +102,6 @@ public interface NetworkAdapter {
      * @param stack the protocol pipeline used for decapsulation (non‐null)
      * @param frame the raw frame bytes received (non‐empty)
      * @throws IllegalArgumentException if {@code stack} is null or {@code frame} is null/empty
-     * @throws IllegalStateException if the adapter is down or owner not set
      */
     void receive(ProtocolPipeline stack, byte[] frame);
 }
