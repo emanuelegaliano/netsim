@@ -6,6 +6,7 @@ import com.netsim.app.msg.MsgClient;
 import com.netsim.app.msg.MsgServer;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.host.Host;
 import com.netsim.network.host.HostBuilder;
 import com.netsim.network.router.Router;
@@ -31,12 +32,12 @@ public class Demo2 {
         Mac macR3  = new Mac("02:00:00:00:00:43");
 
         // 2) Creo gli adapter e li collego punto-punto
-        NetworkAdapter aH1  = new NetworkAdapter("h1-adapter", 1500, macH1);
-        NetworkAdapter aH2  = new NetworkAdapter("h2-adapter", 1500, macH2);
-        NetworkAdapter aSrv = new NetworkAdapter("srv-adapter",1500, macSrv);
-        NetworkAdapter aR1  = new NetworkAdapter("r1-adapter", 1500, macR1);
-        NetworkAdapter aR2  = new NetworkAdapter("r2-adapter", 1500, macR2);
-        NetworkAdapter aR3  = new NetworkAdapter("r3-adapter", 1500, macR3);
+        NetworkAdapter aH1  = new CabledAdapter("h1-adapter", 1500, macH1);
+        NetworkAdapter aH2  = new CabledAdapter("h2-adapter", 1500, macH2);
+        NetworkAdapter aSrv = new CabledAdapter("srv-adapter",1500, macSrv);
+        NetworkAdapter aR1  = new CabledAdapter("r1-adapter", 1500, macR1);
+        NetworkAdapter aR2  = new CabledAdapter("r2-adapter", 1500, macR2);
+        NetworkAdapter aR3  = new CabledAdapter("r3-adapter", 1500, macR3);
 
         aH1.setRemoteAdapter(aR1);  aR1.setRemoteAdapter(aH1);
         aH2.setRemoteAdapter(aR2);  aR2.setRemoteAdapter(aH2);

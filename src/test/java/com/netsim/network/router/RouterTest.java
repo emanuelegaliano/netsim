@@ -4,6 +4,7 @@ import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkNode;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.IPv4.IPv4Protocol;
@@ -29,8 +30,8 @@ public class RouterTest {
 
       @Before
       public void setUp() {
-            adapter1 = new NetworkAdapter("eth0", 1500, new Mac("aa:bb:cc:00:00:01"));
-            adapter2 = new NetworkAdapter("eth1", 1500, new Mac("aa:bb:cc:00:00:02"));
+            adapter1 = new CabledAdapter("eth0", 1500, new Mac("aa:bb:cc:00:00:01"));
+            adapter2 = new CabledAdapter("eth1", 1500, new Mac("aa:bb:cc:00:00:02"));
             localIP1 = new IPv4("10.0.0.1", 24);
             localIP2 = new IPv4("192.168.1.1", 24);
             destIP = new IPv4("192.168.1.99", 32);
@@ -83,7 +84,7 @@ public class RouterTest {
             stack.push(ip);
 
             // Collegamento logico bidirezionale tra adapter2 e un adapter fittizio
-            NetworkAdapter dummyAdapter = new NetworkAdapter("dummy", 1500, new Mac("aa:aa:aa:aa:aa:aa"));
+            CabledAdapter dummyAdapter = new CabledAdapter("dummy", 1500, new Mac("aa:aa:aa:aa:aa:aa"));
             dummyAdapter.setRemoteAdapter(adapter2);
             adapter2.setRemoteAdapter(dummyAdapter);
 

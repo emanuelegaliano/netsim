@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkAdapter;
 
 public class RoutingTableTest {
@@ -23,8 +24,8 @@ public class RoutingTableTest {
         routingTable = new RoutingTable();
         dest1     = new IPv4("192.168.1.0", 24);
         dest2     = new IPv4("10.0.0.0", 24);
-        adapter1  = new NetworkAdapter("eth0", 1500, new Mac("aa:bb:cc:00:11:22"));
-        adapter2  = new NetworkAdapter("eth1", 1500, new Mac("aa:bb:cc:00:33:44"));
+        adapter1  = new CabledAdapter("eth0", 1500, new Mac("aa:bb:cc:00:11:22"));
+        adapter2  = new CabledAdapter("eth1", 1500, new Mac("aa:bb:cc:00:33:44"));
         info1     = new RoutingInfo(adapter1, new IPv4("192.168.2.1", 32));
         info2     = new RoutingInfo(adapter2, new IPv4("10.0.0.254", 32));
     }

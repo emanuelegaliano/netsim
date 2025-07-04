@@ -3,7 +3,7 @@ package com.netsim.app.msg;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Port;
 import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkNode;
 import com.netsim.networkstack.Protocol;
 import com.netsim.networkstack.ProtocolPipeline;
@@ -146,7 +146,7 @@ public class MsgClientTest {
                   new ArpTable(),
                   Collections.singletonList(
                       new Interface(
-                          new NetworkAdapter("if0", 1500, com.netsim.addresses.Mac.broadcast()),
+                          new CabledAdapter("if0", 1500, com.netsim.addresses.Mac.broadcast()),
                           ifaceIp
                       )
                   )

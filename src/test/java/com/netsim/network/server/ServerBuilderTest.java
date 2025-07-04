@@ -7,6 +7,7 @@ import com.netsim.app.Command;
 import com.netsim.app.CommandFactory;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkNode;
 import com.netsim.networkstack.ProtocolPipeline;
 
@@ -54,7 +55,7 @@ public class ServerBuilderTest {
       @Test(expected = RuntimeException.class)
       public void buildFailsWithoutRouting() {
             ServerBuilder<DummyApp> builder = new ServerBuilder<>();
-            NetworkAdapter adapter = new NetworkAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
+            NetworkAdapter adapter = new CabledAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
             Interface iface = new Interface(adapter, new IPv4("192.168.0.2", 24));
 
             builder.setName("srv")     
@@ -65,7 +66,7 @@ public class ServerBuilderTest {
       @Test(expected = RuntimeException.class)
       public void buildFailsWithoutArp() {
             ServerBuilder<DummyApp> builder = new ServerBuilder<>();
-            NetworkAdapter adapter = new NetworkAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
+            NetworkAdapter adapter = new CabledAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
             Interface iface = new Interface(adapter, new IPv4("192.168.0.2", 24));
 
                   
@@ -79,7 +80,7 @@ public class ServerBuilderTest {
       @Test
       public void buildSucceedsWithAllParameters() {
             ServerBuilder<DummyApp> builder = new ServerBuilder<>();
-            NetworkAdapter adapter = new NetworkAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
+            NetworkAdapter adapter = new CabledAdapter("eth0", 1500, new Mac("AA:BB:CC:DD:EE:01"));
             Interface iface = new Interface(adapter, new IPv4("192.168.0.2", 24));
 
             Server<DummyApp> server = builder.setName("srv")     

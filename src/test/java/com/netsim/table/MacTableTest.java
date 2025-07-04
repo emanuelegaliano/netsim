@@ -6,22 +6,23 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.netsim.addresses.Mac;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkAdapter;
 
 public class MacTableTest {
     private MacTable macTable;
     private Mac mac1;
     private Mac mac2;
-    private NetworkAdapter adapter1;
-    private NetworkAdapter adapter2;
+    private CabledAdapter adapter1;
+    private CabledAdapter adapter2;
 
     @Before
     public void setUp() {
         macTable = new MacTable();
         mac1 = new Mac("aa:bb:cc:00:11:22");
         mac2 = new Mac("aa:bb:cc:00:33:44");
-        adapter1 = new NetworkAdapter("eth0", 1500, new Mac("11:22:33:44:55:66"));
-        adapter2 = new NetworkAdapter("eth1", 1500, new Mac("77:88:99:aa:bb:cc"));
+        adapter1 = new CabledAdapter("eth0", 1500, new Mac("11:22:33:44:55:66"));
+        adapter2 = new CabledAdapter("eth1", 1500, new Mac("77:88:99:aa:bb:cc"));
     }
 
     // —— Tests for lookup(...) —— //

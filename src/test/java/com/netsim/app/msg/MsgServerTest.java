@@ -4,7 +4,7 @@ import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
 import com.netsim.addresses.Port;
 import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkNode;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.protocols.UDP.UDPProtocol;
@@ -63,7 +63,7 @@ public class MsgServerTest {
                   new ArpTable(),
                   Collections.singletonList(
                         new Interface(
-                              new NetworkAdapter("eth0", 1500, new Mac("00:11:22:33:44:55")),
+                              new CabledAdapter("eth0", 1500, new Mac("00:11:22:33:44:55")),
                               new IPv4("10.0.0.1", 24)
                         )
                   )

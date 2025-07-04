@@ -44,8 +44,8 @@ public class Logger {
 
     private static Logger createInstance() {
         Properties props = new Properties();
-        boolean   consoleFlag = false;
-        String    fname       = "default.log";
+        boolean    consoleFlag = false;
+        String     fname       = "default.log";
 
         try (InputStream in = Logger.class.getClassLoader()
                                           .getResourceAsStream("application.properties")) {

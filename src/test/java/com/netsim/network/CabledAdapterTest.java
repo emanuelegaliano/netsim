@@ -8,29 +8,29 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class NetworkAdapterTest {
+public class CabledAdapterTest {
 
     private Mac mac1;
     private Mac mac2;
-    private NetworkAdapter adapter1;
-    private NetworkAdapter adapter2;
+    private CabledAdapter adapter1;
+    private CabledAdapter adapter2;
 
     @Before
     public void setup() {
         mac1 = new Mac("aa:bb:cc:11:22:33");
         mac2 = new Mac("aa:bb:cc:44:55:66");
-        adapter1 = new NetworkAdapter("eth0", 1500, mac1);
-        adapter2 = new NetworkAdapter("eth1", 1500, mac2);
+        adapter1 = new CabledAdapter("eth0", 1500, mac1);
+        adapter2 = new CabledAdapter("eth1", 1500, mac2);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsNullName() {
-        new NetworkAdapter(null, 1500, mac1);
+        new CabledAdapter(null, 1500, mac1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructorRejectsNullMac() {
-        new NetworkAdapter("ethX", 1500, null);
+        new CabledAdapter("ethX", 1500, null);
     }
 
     @Test
@@ -43,7 +43,7 @@ public class NetworkAdapterTest {
 
     @Test
     public void equalsAndHashCodeBasedOnMac() {
-        NetworkAdapter clone = new NetworkAdapter("eth9", 1500, new Mac("aa:bb:cc:11:22:33"));
+        CabledAdapter clone = new CabledAdapter("eth9", 1500, new Mac("aa:bb:cc:11:22:33"));
         assertEquals(adapter1, clone);
         assertEquals(adapter1.hashCode(), clone.hashCode());
     }

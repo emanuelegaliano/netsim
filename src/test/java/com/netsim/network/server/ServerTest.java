@@ -7,6 +7,7 @@ import com.netsim.app.Command;
 import com.netsim.app.CommandFactory;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.table.ArpTable;
 import com.netsim.table.RoutingTable;
@@ -27,7 +28,7 @@ public class ServerTest {
       public void setUp() {
             ip = new IPv4("192.168.1.1", 24);
             Mac mac = new Mac("aa:bb:cc:dd:ee:ff");  // MAC valido
-            adapter = new NetworkAdapter("eth0", 1500, mac);
+            adapter = new CabledAdapter("eth0", 1500, mac);
             iface = new Interface(adapter, ip);
             app = new DummyApp();
       }

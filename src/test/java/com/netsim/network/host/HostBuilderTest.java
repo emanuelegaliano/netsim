@@ -7,14 +7,14 @@ import org.junit.Test;
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
 import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 
 /**
  * Unit tests for {@link HostBuilder} to verify builder validation and build logic.
  */
 public class HostBuilderTest {
       private HostBuilder builder;
-      private NetworkAdapter adapter;
+      private CabledAdapter adapter;
       private Interface iface;
       private IPv4 ip;
       private Mac mac;
@@ -25,7 +25,7 @@ public class HostBuilderTest {
       @Before
       public void setUp() throws Exception {
             builder = new HostBuilder();
-            adapter = new NetworkAdapter(
+            adapter = new CabledAdapter(
                   "eth0", 1500,
                   Mac.bytesToMac(new byte[]{0,1,2,3,4,5})
             );

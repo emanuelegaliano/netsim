@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.NetworkAdapter;
 
 public class RoutingInfoTest {
@@ -17,8 +18,8 @@ public class RoutingInfoTest {
 
     @Before
     public void setUp() {
-        adapter1 = new NetworkAdapter("eth0", 1500, new Mac("aa:bb:cc:00:11:22"));
-        adapter2 = new NetworkAdapter("eth1", 1500, new Mac("aa:bb:cc:00:33:44"));
+        adapter1 = new CabledAdapter("eth0", 1500, new Mac("aa:bb:cc:00:11:22"));
+        adapter2 = new CabledAdapter("eth1", 1500, new Mac("aa:bb:cc:00:33:44"));
         nextHop1 = new IPv4("192.168.1.1", 32);
         nextHop2 = new IPv4("10.0.0.1", 32);
     }

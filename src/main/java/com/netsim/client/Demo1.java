@@ -8,6 +8,7 @@ import com.netsim.app.msg.MsgClient;
 import com.netsim.app.msg.MsgServer;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.network.host.Host;
 import com.netsim.network.router.Router;
 import com.netsim.network.server.Server;
@@ -29,10 +30,10 @@ public class Demo1 {
         Mac macServer  = new Mac("02:00:00:00:00:04");
 
         // 2. Adattatori e collegamenti
-        NetworkAdapter adapterHost   = new NetworkAdapter("adapterHost", 1500, macHost);
-        NetworkAdapter adapterR1     = new NetworkAdapter("adapterR1", 1500, macR1);
-        NetworkAdapter adapterR2     = new NetworkAdapter("adapterR2", 1500, macR2);
-        NetworkAdapter adapterServer = new NetworkAdapter("adapterServer", 1500, macServer);
+        NetworkAdapter adapterHost   = new CabledAdapter("adapterHost", 1500, macHost);
+        NetworkAdapter adapterR1     = new CabledAdapter("adapterR1", 1500, macR1);
+        NetworkAdapter adapterR2     = new CabledAdapter("adapterR2", 1500, macR2);
+        NetworkAdapter adapterServer = new CabledAdapter("adapterServer", 1500, macServer);
 
         adapterHost.setRemoteAdapter(adapterR1);
         adapterR1.setRemoteAdapter(adapterHost);

@@ -6,7 +6,7 @@ import com.netsim.app.App;
 import com.netsim.app.Command;
 import com.netsim.app.CommandFactory;
 import com.netsim.network.Interface;
-import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import com.netsim.networkstack.ProtocolPipeline;
 import com.netsim.table.ArpTable;
 import com.netsim.table.RoutingInfo;
@@ -22,13 +22,13 @@ import static org.junit.Assert.*;
 public class HostTest {
       private Host host;
       private IPv4 ip;
-      private NetworkAdapter adapter;
+      private CabledAdapter adapter;
       private Interface iface;
 
       @Before
       public void setUp() {
             ip = new IPv4("192.168.0.1", 24);
-            adapter = new NetworkAdapter("eth0", 1500, new Mac("aa:bb:cc:dd:ee:ff"));
+            adapter = new CabledAdapter("eth0", 1500, new Mac("aa:bb:cc:dd:ee:ff"));
             iface = new Interface(adapter, ip);
             RoutingTable routingTable = new RoutingTable();
             routingTable.add(ip, new RoutingInfo(adapter, null));

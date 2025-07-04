@@ -4,6 +4,7 @@ import com.netsim.addresses.IPv4;
 import com.netsim.addresses.Mac;
 import com.netsim.network.Interface;
 import com.netsim.network.NetworkAdapter;
+import com.netsim.network.CabledAdapter;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ public class RouterBuilderTest {
         subnet = new IPv4("192.168.0.0", 24);
         nextHop = new IPv4("192.168.0.1", 32);
         localIP = new IPv4("192.168.0.10", 32);
-        adapter = new NetworkAdapter("eth0", 1500, new Mac("aa:bb:cc:00:11:22"));
+        adapter = new CabledAdapter("eth0", 1500, new Mac("aa:bb:cc:00:11:22"));
     }
 
     @Test(expected = RuntimeException.class)
