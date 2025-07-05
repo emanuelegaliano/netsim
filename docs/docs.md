@@ -25,14 +25,10 @@
 - **RF3.2:** Deve essere presente almeno un'applicazione esempio per dimostrare la comunicazione end-to-end.
 - **RF3.3:** Le applicazioni devono comunicare tramite protocolli di trasporto simulati come UDP.
 
-<aside>
-💡
-
-*NB: E’ stato utilizzato UDP e in generale protocolli inaffidabili per 2 motivi:
+> *NB: E’ stato utilizzato UDP e in generale protocolli inaffidabili per 2 motivi:
 1. Lo scopo principale era quello di simulare una rete in modo semplice
 2. La base di partenza era Java che forniva una comunicazione affidabile.*
-
-</aside>
+> 
 
 ## 0.2 Requisiti Non Funzionali
 
@@ -392,12 +388,8 @@ Il test `ArpTableTest` verifica che `ArpTable` mantenga correttamente le voci: a
 add() memorizzi la coppia IP–MAC e che remove() la elimini. Controlla anche la gestione del
 gateway predefinito e il comportamento in casi di chiavi non trovate o parametri nulli.
 
-<aside>
-💡
-
-*NB: il protocollo ARP non è stato implementato, questa tabella serve per possibili aggiornamenti del software.*
-
-</aside>
+> *NB: il protocollo ARP non è stato implementato, questa tabella serve per possibili aggiornamenti del software.*
+> 
 
 ### MacTable
 
@@ -410,12 +402,8 @@ Il test `MacTableTest` controlla che le associazioni MAC→Adapter siano memoriz
 che add() memorizzi il binding e lookup() (se presente) lo recuperi. Verifica anche la gestione di
 input non validi.
 
-<aside>
-💡
-
-*NB: il dispositivo Switch (che implementerebbe l’interfaccia Node) non è stato implementato nel software, anche questa tabella è stata scritti per possibili aggiornamenti.*
-
-</aside>
+> *NB: il dispositivo Switch (che implementerebbe l’interfaccia Node) non è stato implementato nel software, anche questa tabella è stata scritti per possibili aggiornamenti.*
+> 
 
 ### RoutingInfo
 
