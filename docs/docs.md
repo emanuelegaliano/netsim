@@ -434,6 +434,8 @@ di input note, l'output generato contenga timestamp, livello e messaggio attesi.
 
 # 2. Design patterns utilizzati
 
+> NB: Ogni singola classe contiene 2 campi statici "logger" e "CLS" che servono per il logging. Poiché è un attributo comune, non verrà rappresentato nell'UML.
+
 ## 2.1 Singleton
 
 E’ stato utilizzato il Singleton per il `Logger` per diverse ragioni:
