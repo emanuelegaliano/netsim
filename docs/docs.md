@@ -25,9 +25,9 @@
 - **RF3.2:** Deve essere presente almeno un'applicazione esempio per dimostrare la comunicazione end-to-end.
 - **RF3.3:** Le applicazioni devono comunicare tramite protocolli di trasporto simulati come UDP.
 
-> NB: E’ stato utilizzato UDP e in generale protocolli inaffidabili per 2 motivi:
-> 1. Lo scopo principale era quello di simulare una rete in modo semplice
-> 2. La base di partenza era Java che forniva una comunicazione affidabile.
+> *NB: E’ stato utilizzato UDP e in generale protocolli inaffidabili per 2 motivi:
+1. Lo scopo principale era quello di simulare una rete in modo semplice
+2. La base di partenza era Java che forniva una comunicazione affidabile.*
 > 
 
 ## 0.2 Requisiti Non Funzionali
